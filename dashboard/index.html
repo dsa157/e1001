@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seeed reTerminal E1001 - E-Ink Weather Dashboard</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  <!-- Lucide Icons Library -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- p5.js Core Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="header-left">
+        <h1 class="title">Seeed reTerminal E1001 &bull; Weather Dashboard</h1>
+        <span class="badge">800 &times; 480 E-Paper</span>
+      </div>
+      <div class="header-right">
+        <span id="seed-display" class="badge">Seed: 1001</span>
+        <span id="version-display" class="version-tag">v2026.09.21.22.35.00</span>
+      </div>
+    </header>
+
+    <main class="canvas-wrapper">
+      <div id="eink-canvas-container" class="eink-bezel">
+        <!-- p5.js canvas injected here -->
+      </div>
+    </main>
+
+    <footer class="app-controls">
+      <!-- Row 1: Location & Units & Time -->
+      <div class="control-row">
+        <div class="control-group">
+          <label for="location-input">City / Query:</label>
+          <input type="text" id="location-input" class="styled-input" placeholder="e.g. Bangkok, NYC" value="Bangkok">
+          <button id="btn-search" class="btn btn-secondary">Search</button>
+          <button id="btn-geolocate" class="btn btn-secondary" title="Detect GPS Location">📍 Auto-Detect</button>
+        </div>
+
+        <div class="control-group">
+          <label>Time Mode:</label>
+          <button id="btn-time-12" class="btn btn-toggle active">12-Hour</button>
+          <button id="btn-time-24" class="btn btn-toggle">24-Hour</button>
+        </div>
+
+        <div class="control-group">
+          <label>Units:</label>
+          <button id="btn-unit-f" class="btn btn-toggle">°F</button>
+          <button id="btn-unit-c" class="btn btn-toggle active">°C</button>
+        </div>
+      </div>
+
+      <!-- Row 2: Theme & Appearance & Hardware Simulation -->
+      <div class="control-row">
+        <div class="control-group">
+          <label for="palette-select">Theme:</label>
+          <select id="palette-select" class="styled-select">
+            <option value="0">0: Monochrome Minimalist</option>
+            <option value="1">1: Charcoal & Mist</option>
+            <option value="2">2: High Contrast 1-Bit</option>
+            <option value="3">3: Carbon Slate</option>
+            <option value="4">4: Stipple Ink Tones</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="bg-select">Background:</label>
+          <select id="bg-select" class="styled-select">
+            <option value="0">Light (Tone 0)</option>
+            <option value="1">Light Gray (Tone 1)</option>
+            <option value="2">Mid Gray (Tone 2)</option>
+            <option value="3">Dark Gray (Tone 3)</option>
+            <option value="4">Pure Black (Tone 4)</option>
+          </select>
+        </div>
+
+        <div class="control-group battery-slider-group">
+          <label for="battery-slider">Battery:</label>
+          <input type="range" id="battery-slider" min="0" max="100" value="85" step="1">
+          <span id="battery-value-label" style="font-weight: 600; font-size: 0.8rem; width: 36px;">85%</span>
+        </div>
+
+        <div class="control-group" style="margin-left: auto;">
+          <button id="btn-refresh" class="btn btn-secondary" title="Fetch fresh weather data">🔄 Refresh</button>
+          <button id="btn-dither" class="btn btn-secondary">1-Bit Dither</button>
+          <button id="btn-export" class="btn btn-primary">Export PNG</button>
+        </div>
+      </div>
+
+      <div class="keyboard-hint">
+        Keyboard Shortcuts: <strong>[R]</strong> Refresh Weather &bull; <strong>[T]</strong> Toggle 12h/24h &bull; <strong>[U]</strong> Toggle °C/°F &bull; <strong>[D]</strong> 1-Bit Dither &bull; <strong>[1-5]</strong> Switch Themes &bull; <strong>[B]</strong> Cycle Battery &bull; <strong>[S]</strong> Save PNG
+      </div>
+    </footer>
+  </div>
+
+  <script src="sketch.js"></script>
+</body>
+</html>

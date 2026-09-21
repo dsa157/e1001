@@ -1,0 +1,584 @@
+# ============================================================================
+# Seeed reTerminal E1001 Weather Dashboard - ESPHome Configuration
+# Version: 2026.09.21.23.15.00
+# Description: High-contrast e-paper weather dashboard for Seeed E1001 (800x480).
+#              Theme 0 Tone 0 (Pure White Background, Crisp Black Ink).
+#              - Official Lucide SVG vector weather icons
+#              - Dynamic IP Geolocation on connect (ip-api.com)
+#              - Live Open-Meteo REST API forecast
+#              - Screen updates every minute at the top of the minute (:00s)
+#              - Real hardware battery voltage ADC (GPIO1) via GPIO21 enable pin
+#              - Clean header without setting badges
+#              - Physical buttons (GPIO4: °C/°F, GPIO5: 12h/24h, GPIO3: Refresh)
+# ============================================================================
+
+substitutions:
+  name: "seeed-reterminal-e1001-weather"
+  friendly_name: "Seeed E1001 Weather Dashboard"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  on_boot:
+    priority: 800
+    then:
+      - output.turn_on: sd_cs_pin
+      - output.turn_off: sd_en_pin
+      - output.turn_on: batt_en_pin
+      - delay: 500ms
+      - component.update: batt_voltage
+      - delay: 200ms
+      - component.update: eink_display
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+# Top-level dynamic state globals
+globals:
+  - id: use_24h_time
+    type: bool
+    restore_value: true
+    initial_value: 'false'
+  - id: use_fahrenheit
+    type: bool
+    restore_value: true
+    initial_value: 'false'
+  - id: loc_name
+    type: std::string
+    restore_value: true
+    initial_value: '"Location..."'
+  - id: cur_temp_c
+    type: int
+    initial_value: '31'
+  - id: cur_weather_code
+    type: int
+    initial_value: '1'
+  - id: cur_humidity
+    type: int
+    initial_value: '62'
+  - id: cur_condition_str
+    type: std::string
+    initial_value: '"Mainly Clear"'
+  - id: fc_max_0
+    type: int
+    initial_value: '34'
+  - id: fc_max_1
+    type: int
+    initial_value: '33'
+  - id: fc_max_2
+    type: int
+    initial_value: '32'
+  - id: fc_max_3
+    type: int
+    initial_value: '30'
+  - id: fc_max_4
+    type: int
+    initial_value: '32'
+  - id: fc_min_0
+    type: int
+    initial_value: '26'
+  - id: fc_min_1
+    type: int
+    initial_value: '25'
+  - id: fc_min_2
+    type: int
+    initial_value: '25'
+  - id: fc_min_3
+    type: int
+    initial_value: '24'
+  - id: fc_min_4
+    type: int
+    initial_value: '25'
+  - id: fc_code_0
+    type: int
+    initial_value: '1'
+  - id: fc_code_1
+    type: int
+    initial_value: '2'
+  - id: fc_code_2
+    type: int
+    initial_value: '61'
+  - id: fc_code_3
+    type: int
+    initial_value: '80'
+  - id: fc_code_4
+    type: int
+    initial_value: '3'
+
+logger:
+  hardware_uart: UART0
+  baud_rate: 115200
+
+# Wi-Fi configuration with fallback AP
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "E1001-Weather-Fallback"
+  on_connect:
+    then:
+      - delay: 1s
+      - http_request.get:
+          url: "http://ip-api.com/json"
+          capture_response: true
+          on_response:
+            then:
+              - lambda: |-
+                  json::parse_json(body, [](JsonObject doc) {
+                    if (doc["city"].is<const char*>() && doc["countryCode"].is<const char*>()) {
+                      std::string city = doc["city"].as<std::string>();
+                      std::string cc = doc["countryCode"].as<std::string>();
+                      id(loc_name) = city + ", " + cc;
+                    }
+                    if (doc["lat"].is<float>() && doc["lon"].is<float>()) {
+                      float lat = doc["lat"].as<float>();
+                      float lon = doc["lon"].as<float>();
+                      char url_buf[256];
+                      snprintf(url_buf, sizeof(url_buf),
+                               "http://api.open-meteo.com/v1/forecast?latitude=%.4f&longitude=%.4f&current=temperature_2m,relative_humidity_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto",
+                               lat, lon);
+                      id(fetch_weather_script).execute(std::string(url_buf));
+                    }
+                    return true;
+                  });
+
+http_request:
+  id: http_client
+  verify_ssl: false
+  timeout: 10s
+
+script:
+  - id: fetch_weather_script
+    mode: restart
+    parameters:
+      weather_url: string
+    then:
+      - http_request.get:
+          url: !lambda return weather_url;
+          capture_response: true
+          on_response:
+            then:
+              - lambda: |-
+                  json::parse_json(body, [](JsonObject doc) {
+                    if (doc["current"].is<JsonObject>()) {
+                      auto cur = doc["current"];
+                      id(cur_temp_c) = (int)std::round(cur["temperature_2m"].as<float>());
+                      id(cur_humidity) = (int)std::round(cur["relative_humidity_2m"].as<float>());
+                      id(cur_weather_code) = cur["weather_code"].as<int>();
+                      
+                      int code = id(cur_weather_code);
+                      if (code == 0) id(cur_condition_str) = "Clear Sky";
+                      else if (code == 1) id(cur_condition_str) = "Mainly Clear";
+                      else if (code == 2) id(cur_condition_str) = "Partly Cloudy";
+                      else if (code == 3) id(cur_condition_str) = "Overcast";
+                      else if (code >= 51 && code <= 67) id(cur_condition_str) = "Rain";
+                      else if (code >= 80 && code <= 82) id(cur_condition_str) = "Showers";
+                      else if (code >= 95) id(cur_condition_str) = "Thunderstorm";
+                      else id(cur_condition_str) = "Cloudy";
+                    }
+                    if (doc["daily"].is<JsonObject>()) {
+                      auto daily = doc["daily"];
+                      auto max_arr = daily["temperature_2m_max"];
+                      auto min_arr = daily["temperature_2m_min"];
+                      auto code_arr = daily["weather_code"];
+                      if (max_arr.size() >= 5) {
+                        id(fc_max_0) = (int)std::round(max_arr[0].as<float>());
+                        id(fc_max_1) = (int)std::round(max_arr[1].as<float>());
+                        id(fc_max_2) = (int)std::round(max_arr[2].as<float>());
+                        id(fc_max_3) = (int)std::round(max_arr[3].as<float>());
+                        id(fc_max_4) = (int)std::round(max_arr[4].as<float>());
+                        
+                        id(fc_min_0) = (int)std::round(min_arr[0].as<float>());
+                        id(fc_min_1) = (int)std::round(min_arr[1].as<float>());
+                        id(fc_min_2) = (int)std::round(min_arr[2].as<float>());
+                        id(fc_min_3) = (int)std::round(min_arr[3].as<float>());
+                        id(fc_min_4) = (int)std::round(min_arr[4].as<float>());
+
+                        id(fc_code_0) = code_arr[0].as<int>();
+                        id(fc_code_1) = code_arr[1].as<int>();
+                        id(fc_code_2) = code_arr[2].as<int>();
+                        id(fc_code_3) = code_arr[3].as<int>();
+                        id(fc_code_4) = code_arr[4].as<int>();
+                      }
+                    }
+                    id(eink_display).update();
+                    return true;
+                  });
+
+captive_portal:
+
+# Hardware Pins: SD isolation & Battery Enable (GPIO21)
+output:
+  - platform: gpio
+    pin: GPIO14
+    id: sd_cs_pin
+  - platform: gpio
+    pin: GPIO16
+    id: sd_en_pin
+  - platform: gpio
+    pin: GPIO21
+    id: batt_en_pin
+
+# Real Battery Voltage and Percentage Sensor (GPIO1 ADC + GPIO21 Enable)
+sensor:
+  - platform: adc
+    pin: GPIO1
+    name: "Battery Voltage"
+    id: batt_voltage
+    update_interval: 10s
+    attenuation: 12db
+    filters:
+      - multiply: 2.0
+
+  - platform: template
+    name: "Battery Percentage"
+    id: batt_percent
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    device_class: battery
+    update_interval: 10s
+    lambda: |-
+      if (!id(batt_voltage).has_state()) return 85.0f;
+      float v = id(batt_voltage).state;
+      if (isnan(v) || v <= 0.2f) return 85.0f;
+      if (v < 2.5f) v = v * 2.0f;
+      if (v >= 4.15f) return 100.0f;
+      if (v <= 3.30f) return 5.0f;
+      float pct = ((v - 3.30f) / (4.15f - 3.30f)) * 100.0f;
+      return (float)std::max(5.0f, std::min(100.0f, pct));
+
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: "Asia/Bangkok"
+    on_time_sync:
+      then:
+        - delay: 1s
+        - component.update: eink_display
+    on_time:
+      # Top of the minute clock update (:00s)
+      - seconds: 0
+        minutes: /1
+        then:
+          - component.update: eink_display
+
+# Physical Hardware Buttons
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO4
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Toggle Unit Button"
+    on_press:
+      then:
+        - lambda: |-
+            id(use_fahrenheit) = !id(use_fahrenheit);
+        - component.update: eink_display
+
+  - platform: gpio
+    pin:
+      number: GPIO5
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Toggle Time Mode Button"
+    on_press:
+      then:
+        - lambda: |-
+            id(use_24h_time) = !id(use_24h_time);
+        - component.update: eink_display
+
+  - platform: gpio
+    pin:
+      number: GPIO3
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Refresh Display Button"
+    on_press:
+      then:
+        - component.update: batt_voltage
+        - delay: 200ms
+        - component.update: eink_display
+
+# SPI bus for Waveshare 7.50in V2 E-Paper
+spi:
+  clk_pin: GPIO7
+  mosi_pin: GPIO9
+
+# Official Lucide SVG Images
+image:
+  - file: "assets/icons/sun.svg"
+    id: img_sun
+    resize: 42x42
+    type: BINARY
+  - file: "assets/icons/cloud-sun.svg"
+    id: img_cloud_sun
+    resize: 42x42
+    type: BINARY
+  - file: "assets/icons/cloud.svg"
+    id: img_cloud
+    resize: 42x42
+    type: BINARY
+  - file: "assets/icons/cloud-rain.svg"
+    id: img_cloud_rain
+    resize: 42x42
+    type: BINARY
+  - file: "assets/icons/cloud-lightning.svg"
+    id: img_cloud_lightning
+    resize: 42x42
+    type: BINARY
+  - file: "assets/icons/cloud-snow.svg"
+    id: img_cloud_snow
+    resize: 42x42
+    type: BINARY
+  - file: "assets/icons/cloud-fog.svg"
+    id: img_cloud_fog
+    resize: 42x42
+    type: BINARY
+  - file: "assets/icons/moon.svg"
+    id: img_moon
+    resize: 42x42
+    type: BINARY
+
+# Fonts - Clean Sans-Serif Fonts (Roboto via Google Fonts)
+font:
+  - file: "gfonts://Roboto"
+    id: font_temp_hero
+    size: 48
+    glyphs: "0123456789° %/:-.,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+  - file: "gfonts://Roboto"
+    id: font_time_hero
+    size: 40
+    glyphs: "0123456789° %/:-.,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+  - file: "gfonts://Roboto"
+    id: font_title
+    size: 20
+    glyphs: "0123456789° %/:-.,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+  - file: "gfonts://Roboto"
+    id: font_subtitle
+    size: 15
+    glyphs: "0123456789° %/:-.,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+  - file: "gfonts://Roboto"
+    id: font_card_day
+    size: 16
+    glyphs: "0123456789° %/:-.,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+  - file: "gfonts://Roboto"
+    id: font_card_temp
+    size: 18
+    glyphs: "0123456789° %/:-.,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+  - file: "gfonts://Roboto"
+    id: font_small
+    size: 12
+    glyphs: "0123456789° %/:-.,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+# E-Paper Display Component (800x480 Waveshare 7.50in V2)
+# Polarity Rule: COLOR_OFF = Pure White Background, COLOR_ON = Pure Black Ink
+display:
+  - platform: waveshare_epaper
+    id: eink_display
+    cs_pin: GPIO10
+    dc_pin: GPIO11
+    reset_pin: GPIO12
+    busy_pin:
+      number: GPIO13
+      inverted: true
+    model: 7.50inv2
+    update_interval: 600s
+    rotation: 0
+    lambda: |-
+      // Clear display buffer (Theme 0 Tone 0: Stark White background)
+      it.fill(COLOR_OFF);
+
+      // Real time variables from SNTP
+      int cur_hour = 12;
+      int cur_min = 0;
+      int cur_day_of_week = 1;
+      int cur_month = 9;
+      int cur_day = 21;
+      int cur_year = 2026;
+
+      auto time = id(sntp_time).now();
+      if (time.is_valid()) {
+        cur_hour = time.hour;
+        cur_min = time.minute;
+        cur_day_of_week = time.day_of_week;
+        cur_month = time.month;
+        cur_day = time.day_of_month;
+        cur_year = time.year;
+      }
+
+      // ============================================================================
+      // 1. TOP HEADER RENDERING (No dividing lines, White bg, Black text)
+      // ============================================================================
+      int margin_x = 24;
+      int header_y = 18;
+
+      // Left: Location & Condition
+      it.printf(margin_x, header_y, id(font_title), COLOR_ON, "%s", id(loc_name).c_str());
+      
+      // Hero Current Temperature
+      int temp_display = id(cur_temp_c);
+      if (id(use_fahrenheit)) {
+        temp_display = (int)((id(cur_temp_c) * 9.0f / 5.0f) + 32.0f);
+        it.printf(margin_x + 64, header_y + 26, id(font_temp_hero), COLOR_ON, "%d°F", temp_display);
+      } else {
+        it.printf(margin_x + 64, header_y + 26, id(font_temp_hero), COLOR_ON, "%d°C", temp_display);
+      }
+
+      // Hero Lucide Icon
+      int code_hero = id(cur_weather_code);
+      if (code_hero == 0) {
+        it.image(margin_x + 6, header_y + 32, id(img_sun));
+      } else if (code_hero == 1 || code_hero == 2) {
+        it.image(margin_x + 6, header_y + 32, id(img_cloud_sun));
+      } else if (code_hero == 3) {
+        it.image(margin_x + 6, header_y + 32, id(img_cloud));
+      } else if (code_hero >= 51 && code_hero <= 67) {
+        it.image(margin_x + 6, header_y + 32, id(img_cloud_rain));
+      } else if (code_hero >= 80 && code_hero <= 82) {
+        it.image(margin_x + 6, header_y + 32, id(img_cloud_rain));
+      } else if (code_hero >= 95) {
+        it.image(margin_x + 6, header_y + 32, id(img_cloud_lightning));
+      } else {
+        it.image(margin_x + 6, header_y + 32, id(img_cloud));
+      }
+
+      // Subtitle
+      it.printf(margin_x + 64, header_y + 80, id(font_subtitle), COLOR_ON, "%s  •  Humidity: %d%%", id(cur_condition_str).c_str(), id(cur_humidity));
+
+      // Right: Time (12h/24h) & Date (Clean header with no extra settings tag)
+      if (id(use_24h_time)) {
+        it.printf(800 - margin_x, header_y + 8, id(font_time_hero), COLOR_ON, TextAlign::TOP_RIGHT, "%02d:%02d", cur_hour, cur_min);
+      } else {
+        int h12 = cur_hour % 12;
+        if (h12 == 0) h12 = 12;
+        const char* ampm = cur_hour >= 12 ? "PM" : "AM";
+        it.printf(800 - margin_x, header_y + 8, id(font_time_hero), COLOR_ON, TextAlign::TOP_RIGHT, "%d:%02d %s", h12, cur_min, ampm);
+      }
+
+      const char* days_full[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+      const char* months_full[] = {"", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+      it.printf(800 - margin_x, header_y + 58, id(font_subtitle), COLOR_ON, TextAlign::TOP_RIGHT, "%s, %s %d", days_full[(cur_day_of_week - 1) % 7], months_full[cur_month % 13], cur_day);
+
+      // ============================================================================
+      // 2. BODY SECTION (5-DAY FORECAST GRID - Dynamic day names & Lucide SVG icons)
+      // ============================================================================
+      const char* day_abbrs[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
+      const char* month_abbrs[] = {"", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+      
+      int card_max_c[] = {id(fc_max_0), id(fc_max_1), id(fc_max_2), id(fc_max_3), id(fc_max_4)};
+      int card_min_c[] = {id(fc_min_0), id(fc_min_1), id(fc_min_2), id(fc_min_3), id(fc_min_4)};
+      int card_codes[] = {id(fc_code_0), id(fc_code_1), id(fc_code_2), id(fc_code_3), id(fc_code_4)};
+
+      int body_y = 135;
+      int body_h = 270;
+      int total_w = 800 - (margin_x * 2);
+      int gap = 12;
+      int card_w = (total_w - (gap * 4)) / 5;
+
+      for (int i = 0; i < 5; i++) {
+        int cx = margin_x + i * (card_w + gap);
+        
+        // Card Border
+        it.rectangle(cx, body_y, card_w, body_h, COLOR_ON);
+        if (i == 0) {
+          it.rectangle(cx + 1, body_y + 1, card_w - 2, body_h - 2, COLOR_ON);
+        }
+
+        // Dynamically compute Day Name (TODAY, +1, +2, +3, +4)
+        if (i == 0) {
+          it.printf(cx + card_w / 2, body_y + 14, id(font_card_day), COLOR_ON, TextAlign::TOP_CENTER, "TODAY");
+        } else {
+          int d_idx = (cur_day_of_week - 1 + i) % 7;
+          it.printf(cx + card_w / 2, body_y + 14, id(font_card_day), COLOR_ON, TextAlign::TOP_CENTER, "%s", day_abbrs[d_idx]);
+        }
+
+        // Dynamically compute Calendar Date
+        int est_day = cur_day + i;
+        it.printf(cx + card_w / 2, body_y + 38, id(font_small), COLOR_ON, TextAlign::TOP_CENTER, "%s %d", month_abbrs[cur_month % 13], est_day);
+
+        // Actual Lucide SVG Image
+        int img_x = cx + (card_w - 42) / 2;
+        int img_y = body_y + 68;
+        int code = card_codes[i];
+        if (code == 0) {
+          it.image(img_x, img_y, id(img_sun));
+        } else if (code == 1 || code == 2) {
+          it.image(img_x, img_y, id(img_cloud_sun));
+        } else if (code == 3) {
+          it.image(img_x, img_y, id(img_cloud));
+        } else if (code >= 51 && code <= 67) {
+          it.image(img_x, img_y, id(img_cloud_rain));
+        } else if (code >= 71 && code <= 77) {
+          it.image(img_x, img_y, id(img_cloud_snow));
+        } else if (code >= 80 && code <= 82) {
+          it.image(img_x, img_y, id(img_cloud_rain));
+        } else if (code >= 95) {
+          it.image(img_x, img_y, id(img_cloud_lightning));
+        } else {
+          it.image(img_x, img_y, id(img_cloud));
+        }
+
+        // Condition Text from WMO Code
+        const char* cond_name = "Clear";
+        if (card_codes[i] == 1 || card_codes[i] == 2) cond_name = "Partly";
+        else if (card_codes[i] == 3) cond_name = "Overcast";
+        else if (card_codes[i] >= 51 && card_codes[i] <= 67) cond_name = "Rain";
+        else if (card_codes[i] >= 80 && card_codes[i] <= 82) cond_name = "Showers";
+        else if (card_codes[i] >= 95) cond_name = "Storm";
+
+        it.printf(cx + card_w / 2, body_y + 130, id(font_subtitle), COLOR_ON, TextAlign::TOP_CENTER, "%s", cond_name);
+
+        // Max / Min Temperatures
+        int max_val = card_max_c[i];
+        int min_val = card_min_c[i];
+        if (id(use_fahrenheit)) {
+          max_val = (int)((max_val * 9.0f / 5.0f) + 32.0f);
+          min_val = (int)((min_val * 9.0f / 5.0f) + 32.0f);
+        }
+        it.printf(cx + card_w / 2 - 20, body_y + 165, id(font_card_temp), COLOR_ON, TextAlign::TOP_CENTER, "%d°", max_val);
+        it.printf(cx + card_w / 2 + 20, body_y + 168, id(font_subtitle), COLOR_ON, TextAlign::TOP_CENTER, "%d°", min_val);
+
+        // Range Bar
+        it.rectangle(cx + 14, body_y + 200, card_w - 28, 6, COLOR_ON);
+        it.filled_rectangle(cx + 26, body_y + 200, card_w - 52, 6, COLOR_ON);
+
+        // Current Ribbon
+        if (i == 0) {
+          it.filled_rectangle(cx + 16, body_y + body_h - 26, card_w - 32, 16, COLOR_ON);
+          it.printf(cx + card_w / 2, body_y + body_h - 26, id(font_small), COLOR_OFF, TextAlign::TOP_CENTER, "CURRENT");
+        }
+      }
+
+      // ============================================================================
+      // 3. FOOTER SECTION (No dividing line, real hardware battery on right)
+      // ============================================================================
+      int footer_y = 432;
+      it.printf(margin_x + 6, footer_y + 6, id(font_subtitle), COLOR_ON, "• Open-Meteo Free API  |  Seeed reTerminal E1001");
+
+      // Right: Lucide Battery Gauge (Capsule + Terminal Nub)
+      int bat_w = 44;
+      int bat_h = 20;
+      int bat_x = 800 - margin_x - bat_w - 6;
+      int bat_y = footer_y + 4;
+      
+      int current_bat_pct = 85;
+      if (id(batt_percent).has_state()) {
+        current_bat_pct = (int)id(batt_percent).state;
+      }
+
+      it.printf(bat_x - 10, footer_y + 6, id(font_subtitle), COLOR_ON, TextAlign::TOP_RIGHT, "%d%%", current_bat_pct);
+      it.rectangle(bat_x, bat_y, bat_w, bat_h, COLOR_ON);
+      it.filled_rectangle(bat_x + bat_w, bat_y + 5, 4, 10, COLOR_ON); // terminal nub
+      int inner_w = (int)((bat_w - 6) * (current_bat_pct / 100.0f));
+      if (inner_w > 0) {
+        it.filled_rectangle(bat_x + 3, bat_y + 3, inner_w, bat_h - 6, COLOR_ON);
+      }

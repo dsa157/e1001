@@ -1,0 +1,18 @@
+{
+  "name": "e1001-weather-dashboard",
+  "version": "1.0.0",
+  "description": "E1001 E-Ink Weather Dashboard using p5.js and Open-Meteo API",
+  "main": "sketch.js",
+  "scripts": {
+    "start": "npx serve -l 8002 .",
+    "serve": "npx serve -l 8002 ."
+  },
+  "keywords": [
+    "e1001",
+    "weather",
+    "dashboard",
+    "p5js",
+    "e-ink"
+  ],
+  "license": "MIT"
+}
