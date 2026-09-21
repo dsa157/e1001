@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E1001 Generative Art - p5.js</title>
+  <!-- Shared Common E1001 Stylesheet -->
+  <link rel="stylesheet" href="../common/e1001-style.css">
+  <link rel="stylesheet" href="style.css">
+  <!-- p5.js core library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+  <!-- Shared Common E1001 Core Library -->
+  <script src="../common/e1001-common.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="header-left">
+        <h1 class="title">Seeed reTerminal E1001 &bull; Generative Art</h1>
+        <span class="badge">800 &times; 480 Full-Bleed</span>
+      </div>
+      <div class="header-right">
+        <span id="version-display" class="version-tag">v2026.09.21.21.35.00</span>
+      </div>
+    </header>
+
+    <main class="canvas-wrapper">
+      <div id="eink-canvas-container" class="eink-bezel">
+        <!-- p5.js canvas injected here -->
+      </div>
+    </main>
+
+    <footer class="app-controls">
+      <div class="control-group">
+        <button id="btn-prev" class="btn btn-secondary" title="Previous Design (Left Arrow / GPIO5)">◀ Prev</button>
+        <select id="design-select" class="styled-select">
+          <option value="0">Design 1: Harmonic Contours</option>
+          <option value="1">Design 2: Flow Streamlines</option>
+          <option value="2">Design 3: Sacred Rosette</option>
+        </select>
+        <button id="btn-next" class="btn btn-secondary" title="Next Design (Right Arrow / GPIO4)">Next ▶</button>
+      </div>
+
+      <div class="control-group">
+        <label for="palette-select">Palette:</label>
+        <select id="palette-select" class="styled-select">
+          <option value="0">0: Monochrome Minimalist</option>
+          <option value="1">1: Charcoal & Mist</option>
+          <option value="2">2: High Contrast 1-Bit</option>
+          <option value="3">3: Carbon Slate</option>
+          <option value="4">4: Stipple Ink Tones</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="bg-select">Background:</label>
+        <select id="bg-select" class="styled-select">
+          <option value="0">Light (Tone 0)</option>
+          <option value="1">Light Gray (Tone 1)</option>
+          <option value="2">Mid Gray (Tone 2)</option>
+          <option value="3">Dark Gray (Tone 3)</option>
+          <option value="4">Pure Black (Tone 4)</option>
+        </select>
+      </div>
+
+      <div class="button-group">
+        <button id="btn-reseed" class="btn btn-secondary">New Seed</button>
+        <button id="btn-dither" class="btn btn-secondary">1-Bit Dither</button>
+        <button id="btn-export" class="btn btn-primary">Export PNG</button>
+      </div>
+    </footer>
+  </div>
+
+  <script src="sketch.js"></script>
+</body>
+</html>

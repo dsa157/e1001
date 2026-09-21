@@ -1,0 +1,19 @@
+{
+  "name": "art1-test",
+  "version": "1.0.0",
+  "description": "p5.js Generative Art for Seeed reTerminal E1001 E-Ink Display",
+  "main": "sketch.js",
+  "scripts": {
+    "start": "npx serve -l 8001 .",
+    "dev": "npx serve -l 8001 ."
+  },
+  "keywords": [
+    "p5js",
+    "generative-art",
+    "e-ink",
+    "e1001",
+    "seeed"
+  ],
+  "author": "",
+  "license": "MIT"
+}

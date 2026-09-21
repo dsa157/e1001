@@ -1,0 +1,16 @@
+{
+  "name": "e1001-projects",
+  "version": "1.0.0",
+  "description": "Parent workspace and shared assets for Seeed reTerminal E1001 p5.js projects",
+  "scripts": {
+    "art1": "npx serve -l 8001 art1-test",
+    "serve": "npx serve -l 8001 ."
+  },
+  "keywords": [
+    "e1001",
+    "p5js",
+    "e-ink",
+    "seeed"
+  ],
+  "license": "MIT"
+}

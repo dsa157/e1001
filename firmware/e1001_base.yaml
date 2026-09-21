@@ -1,0 +1,104 @@
+# ============================================================================
+# Seeed reTerminal E1001 - Common Base ESPHome Configuration
+# Version: 2026.09.21.21.35.00
+# Description: Standard hardware definition, SPI pinout, SD bus release,
+#              3-button handlers, and display driver for Seeed E1001.
+# ============================================================================
+
+substitutions:
+  name: "seeed-reterminal-e1001"
+  friendly_name: "Seeed E1001 Display"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  on_boot:
+    priority: 800
+    then:
+      - output.turn_on: sd_cs_pin
+      - output.turn_off: sd_en_pin
+      - delay: 500ms
+      - component.update: eink_display
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+globals:
+  - id: design_index
+    type: int
+    restore_value: true
+    initial_value: '0'
+  - id: art_seed
+    type: int
+    restore_value: true
+    initial_value: '1001'
+
+logger:
+  hardware_uart: UART0
+  baud_rate: 115200
+
+output:
+  - platform: gpio
+    pin: GPIO14
+    id: sd_cs_pin
+  - platform: gpio
+    pin: GPIO16
+    id: sd_en_pin
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO4
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Next Button"
+    on_press:
+      then:
+        - lambda: |-
+            id(design_index) = (id(design_index) + 1) % 3;
+            id(art_seed) = (int)(esp_random() % 100000) + 1;
+        - component.update: eink_display
+
+  - platform: gpio
+    pin:
+      number: GPIO5
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Prev Button"
+    on_press:
+      then:
+        - lambda: |-
+            id(design_index) = (id(design_index) + 2) % 3;
+            id(art_seed) = (int)(esp_random() % 100000) + 1;
+        - component.update: eink_display
+
+  - platform: gpio
+    pin:
+      number: GPIO3
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Action Button"
+    on_press:
+      then:
+        - lambda: |-
+            id(art_seed) = (int)(esp_random() % 100000) + 1;
+        - component.update: eink_display
+
+spi:
+  clk_pin: GPIO7
+  mosi_pin: GPIO9
+
+display:
+  - platform: waveshare_epaper
+    id: eink_display
+    cs_pin: GPIO10
+    dc_pin: GPIO11
+    reset_pin: GPIO12
+    busy_pin:
+      number: GPIO13
+      inverted: true
+    model: 7.50inv2
+    update_interval: never
+    rotation: 0
