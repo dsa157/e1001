@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * Seeed reTerminal E1001 - E-Ink Weather Dashboard
- * Version: 2026.09.21.23.42.00
+ * Version: 2026.09.21.23.54.00
  * Description: High-contrast, parameterizable weather dashboard designed for
  *              the Seeed reTerminal E1001 (800x480 e-paper display).
  *              Features 12h/24h clock, current temperature and conditions,
@@ -56,7 +56,7 @@ const FOOTER_HEIGHT = 44;                  // default: 44 (Footer section height
 // Forecast Grid Parameters
 const FORECAST_DAYS_COUNT = 5;             // default: 5 (5-day forecast display)
 const CARD_GAP = 12;                       // default: 12 (Gap between forecast cards)
-const CARD_CORNER_RADIUS = 20;              // default: 8 (Forecast card border radius)
+const CARD_CORNER_RADIUS = 16;             // default: 16 (Forecast card corner radius)
 const ICON_SIZE_HERO = 54;                 // default: 54 (Header weather icon diameter)
 const ICON_SIZE_CARD = 48;                 // default: 48 (Card weather icon diameter)
 
@@ -254,7 +254,7 @@ function drawHeader(palette) {
   fill(subTextColor);
   useFont(false);
   textSize(FONT_SIZE_CONDITION);
-  const metaText = `${condition}  •  Humidity: ${weatherData.current.humidity}%`;
+  const metaText = `${condition}  |  Humidity: ${weatherData.current.humidity}%`;
   text(metaText, headerLeftX + 68, HEADER_Y + 84);
   pop();
 
@@ -300,8 +300,8 @@ function drawForecastGrid(palette) {
 
 function drawForecastCard(x, y, w, h, data, isToday, palette) {
   push();
-  const cardBgTone = isToday ? palette[1] : palette[0];
-  const borderTone = isToday ? palette[4] : palette[2];
+  const cardBgTone = palette[0];
+  const borderTone = palette[4];
   const textColor = palette[4];
   const subTextColor = palette[3];
 
@@ -309,7 +309,7 @@ function drawForecastCard(x, y, w, h, data, isToday, palette) {
   rectMode(CORNER);
   fill(cardBgTone);
   stroke(borderTone);
-  strokeWeight(isToday ? 2.5 : 1.5);
+  strokeWeight(isToday ? 2 : 1.5);
   rect(x, y, w, h, CARD_CORNER_RADIUS);
 
   // Card Header Tag (Day Name)
@@ -356,17 +356,6 @@ function drawForecastCard(x, y, w, h, data, isToday, palette) {
   // Solid Black Card Separator
   drawCardSeparator(x + 16, y + 204, w - 32, palette);
 
-  // "TODAY" Highlight Ribbon if it's the current day
-  if (isToday) {
-    fill(palette[4]);
-    rect(x + 16, y + h - 28, w - 32, 18, 4);
-    fill(palette[0]);
-    useFont(true);
-    textSize(10);
-    textAlign(CENTER, CENTER);
-    text("CURRENT", x + w / 2, y + h - 19);
-  }
-
   pop();
 }
 
@@ -394,7 +383,7 @@ function drawFooter(palette) {
   textSize(FONT_SIZE_FOOTER);
   useFont(false);
   const timeStampStr = lastUpdatedTime ? lastUpdatedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "Just now";
-  const statusStr = isLoadingWeather ? "⏳ Syncing weather..." : `• Open-Meteo Free API  |  Last Sync: ${timeStampStr}`;
+  const statusStr = isLoadingWeather ? "⏳ Syncing weather..." : `Open-Meteo Free API  |  Last Sync: ${timeStampStr}`;
   text(statusStr, MARGIN_X + 8, FOOTER_Y + FOOTER_HEIGHT / 2);
   pop();
 

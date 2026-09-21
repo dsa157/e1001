@@ -483,14 +483,58 @@ display:
       int total_w = 800 - (margin_x * 2);
       int gap = 12;
       int card_w = (total_w - (gap * 4)) / 5;
+      int card_radius = 16;
+
+      // Rounded rectangle drawing helper matching web preview
+      auto draw_rounded_rect = [&](int rx, int ry, int rw, int rh, int rad, Color col) {
+        it.line(rx + rad, ry, rx + rw - rad, ry, col);
+        it.line(rx + rad, ry + rh, rx + rw - rad, ry + rh, col);
+        it.line(rx, ry + rad, rx, ry + rh - rad, col);
+        it.line(rx + rw, ry + rad, rx + rw, ry + rh - rad, col);
+        int f = 1 - rad;
+        int ddF_x = 1;
+        int ddF_y = -2 * rad;
+        int x_c = 0;
+        int y_c = rad;
+        while (x_c < y_c) {
+          if (f >= 0) {
+            y_c--;
+            ddF_y += 2;
+            f += ddF_y;
+          }
+          x_c++;
+          ddF_x += 2;
+          f += ddF_x;
+          // Quadrant 1 (Top-Right): rx+rw-rad, ry+rad
+          it.draw_pixel_at(rx + rw - rad + x_c, ry + rad - y_c, col);
+          it.draw_pixel_at(rx + rw - rad + y_c, ry + rad - x_c, col);
+          // Quadrant 2 (Top-Left): rx+rad, ry+rad
+          it.draw_pixel_at(rx + rad - x_c, ry + rad - y_c, col);
+          it.draw_pixel_at(rx + rad - y_c, ry + rad - x_c, col);
+          // Quadrant 3 (Bottom-Left): rx+rad, ry+rh-rad
+          it.draw_pixel_at(rx + rad - x_c, ry + rh - rad + y_c, col);
+          it.draw_pixel_at(rx + rad - y_c, ry + rh - rad + x_c, col);
+          // Quadrant 4 (Bottom-Right): rx+rw-rad, ry+rh-rad
+          it.draw_pixel_at(rx + rw - rad + x_c, ry + rh - rad + y_c, col);
+          it.draw_pixel_at(rx + rw - rad + y_c, ry + rh - rad + x_c, col);
+        }
+        it.draw_pixel_at(rx + rw - rad, ry, col);
+        it.draw_pixel_at(rx + rw, ry + rad, col);
+        it.draw_pixel_at(rx + rad, ry, col);
+        it.draw_pixel_at(rx, ry + rad, col);
+        it.draw_pixel_at(rx + rad, ry + rh, col);
+        it.draw_pixel_at(rx, ry + rh - rad, col);
+        it.draw_pixel_at(rx + rw - rad, ry + rh, col);
+        it.draw_pixel_at(rx + rw, ry + rh - rad, col);
+      };
 
       for (int i = 0; i < 5; i++) {
         int cx = margin_x + i * (card_w + gap);
         
-        // Card Border
-        it.rectangle(cx, body_y, card_w, body_h, COLOR_ON);
+        // Rounded Card Border (matching web preview radius 16)
+        draw_rounded_rect(cx, body_y, card_w, body_h, card_radius, COLOR_ON);
         if (i == 0) {
-          it.rectangle(cx + 1, body_y + 1, card_w - 2, body_h - 2, COLOR_ON);
+          draw_rounded_rect(cx + 1, body_y + 1, card_w - 2, body_h - 2, card_radius > 1 ? card_radius - 1 : 1, COLOR_ON);
         }
 
         // Dynamically compute Day Name (TODAY, +1, +2, +3, +4)
@@ -550,19 +594,13 @@ display:
         // Solid Black Separator Line
         it.line(cx + 16, body_y + 204, cx + card_w - 16, body_y + 204, COLOR_ON);
         it.line(cx + 16, body_y + 205, cx + card_w - 16, body_y + 205, COLOR_ON);
-
-        // Current Ribbon
-        if (i == 0) {
-          it.filled_rectangle(cx + 16, body_y + body_h - 26, card_w - 32, 16, COLOR_ON);
-          it.printf(cx + card_w / 2, body_y + body_h - 26, id(font_small), COLOR_OFF, TextAlign::TOP_CENTER, "CURRENT");
-        }
       }
 
       // ============================================================================
       // 3. FOOTER SECTION (No dividing line, real hardware battery on right)
       // ============================================================================
       int footer_y = 432;
-      it.printf(margin_x + 6, footer_y + 6, id(font_subtitle), COLOR_ON, "• Open-Meteo Free API  |  Seeed reTerminal E1001");
+      it.printf(margin_x + 6, footer_y + 6, id(font_subtitle), COLOR_ON, "Open-Meteo Free API  |  Seeed reTerminal E1001");
 
       // Right: Lucide Battery Gauge (Capsule + Terminal Nub)
       int bat_w = 44;
