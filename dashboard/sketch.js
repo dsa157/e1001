@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * Seeed reTerminal E1001 - E-Ink Weather Dashboard
- * Version: 2026.09.21.22.44.00
+ * Version: 2026.09.21.23.42.00
  * Description: High-contrast, parameterizable weather dashboard designed for
  *              the Seeed reTerminal E1001 (800x480 e-paper display).
  *              Features 12h/24h clock, current temperature and conditions,
@@ -25,8 +25,10 @@ const DISPLAY_CENTER_Y = 240;              // default: 240 (Canvas center Y)
 let GLOBAL_SEED = 1001;                    // default: 1001 (Deterministic random seed)
 
 // Typography & Font Configuration (Strictly Sans-Serif)
-const FONT_PRIMARY = "Roboto";         // default: "sans-serif" (Strictly sans-serif)
-const FONT_FAMILY_STACK = "'Inter', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"; // default: modern sans-serif stack
+const FONT_PRIMARY = "Roboto";             // default: "Roboto" (Strictly sans-serif)
+const FONT_FAMILY_STACK = "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"; // default: modern sans-serif stack
+let fontRobotoRegular = null;
+let fontRobotoBold = null;
 
 // Font Sizes (Bold & Easy to Read)
 const FONT_SIZE_TEMP_HERO = 56;            // default: 56 (Hero current temp size)
@@ -144,7 +146,7 @@ function setup() {
   const canvas = createCanvas(DISPLAY_WIDTH, DISPLAY_HEIGHT);
   canvas.parent("eink-canvas-container");
   pixelDensity(1);
-  textFont(FONT_PRIMARY);
+  useFont(false);
 
   // Initialize deterministic seed
   reseed(GLOBAL_SEED);
@@ -233,7 +235,7 @@ function drawHeader(palette) {
   // Location Name
   fill(textColor);
   noStroke();
-  textStyle(BOLD);
+  useFont(true);
   textSize(FONT_SIZE_LOCATION);
   text(LOCATION_NAME.toUpperCase(), headerLeftX, HEADER_Y);
 
@@ -244,13 +246,13 @@ function drawHeader(palette) {
 
   // Big Bold Current Temperature
   fill(textColor);
-  textStyle(BOLD);
+  useFont(true);
   textSize(FONT_SIZE_TEMP_HERO);
   text(currentTemp, headerLeftX + 68, HEADER_Y + 28);
 
   // Weather Condition Subtitle & Humidity
   fill(subTextColor);
-  textStyle(NORMAL);
+  useFont(false);
   textSize(FONT_SIZE_CONDITION);
   const metaText = `${condition}  •  Humidity: ${weatherData.current.humidity}%`;
   text(metaText, headerLeftX + 68, HEADER_Y + 84);
@@ -263,14 +265,14 @@ function drawHeader(palette) {
   // Current formatted time
   const timeString = getFormattedTime(new Date(), USE_24_HOUR_TIME);
   fill(textColor);
-  textStyle(BOLD);
+  useFont(true);
   textSize(FONT_SIZE_TIME_HERO);
   text(timeString, headerRightX, HEADER_Y + 5);
 
   // Current formatted full date
   const dateString = getFormattedFullDate(new Date());
   fill(subTextColor);
-  textStyle(BOLD);
+  useFont(true);
   textSize(FONT_SIZE_DATE);
   text(dateString, headerRightX, HEADER_Y + 58);
   pop();
@@ -314,13 +316,13 @@ function drawForecastCard(x, y, w, h, data, isToday, palette) {
   textAlign(CENTER, TOP);
   fill(textColor);
   noStroke();
-  textStyle(BOLD);
+  useFont(true);
   textSize(FONT_SIZE_CARD_DAY);
   text(data.day, x + w / 2, y + 14);
 
   // Calendar Date
   fill(subTextColor);
-  textStyle(NORMAL);
+  useFont(false);
   textSize(FONT_SIZE_CARD_DATE);
   text(data.date, x + w / 2, y + 38);
 
@@ -331,7 +333,7 @@ function drawForecastCard(x, y, w, h, data, isToday, palette) {
 
   // Short condition description
   fill(textColor);
-  textStyle(BOLD);
+  useFont(true);
   textSize(FONT_SIZE_CARD_METRICS);
   text(data.condition, x + w / 2, y + 132);
 
@@ -341,13 +343,13 @@ function drawForecastCard(x, y, w, h, data, isToday, palette) {
 
   // High Temp (Bold & Large)
   fill(textColor);
-  textStyle(BOLD);
+  useFont(true);
   textSize(FONT_SIZE_CARD_TEMP_MAX);
   text(highStr, x + w / 2 - 20, y + 168);
 
   // Low Temp (Subtle)
   fill(subTextColor);
-  textStyle(NORMAL);
+  useFont(false);
   textSize(FONT_SIZE_CARD_TEMP_MIN);
   text(lowStr, x + w / 2 + 22, y + 172);
 
@@ -359,7 +361,7 @@ function drawForecastCard(x, y, w, h, data, isToday, palette) {
     fill(palette[4]);
     rect(x + 16, y + h - 28, w - 32, 18, 4);
     fill(palette[0]);
-    textStyle(BOLD);
+    useFont(true);
     textSize(10);
     textAlign(CENTER, CENTER);
     text("CURRENT", x + w / 2, y + h - 19);
@@ -390,7 +392,7 @@ function drawFooter(palette) {
   fill(subTextColor);
   noStroke();
   textSize(FONT_SIZE_FOOTER);
-  textStyle(NORMAL);
+  useFont(false);
   const timeStampStr = lastUpdatedTime ? lastUpdatedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "Just now";
   const statusStr = isLoadingWeather ? "⏳ Syncing weather..." : `• Open-Meteo Free API  |  Last Sync: ${timeStampStr}`;
   text(statusStr, MARGIN_X + 8, FOOTER_Y + FOOTER_HEIGHT / 2);
@@ -417,7 +419,7 @@ function drawBatteryIndicator(rightEdgeX, centerY, levelPercent, palette) {
   textAlign(RIGHT, CENTER);
   fill(textColor);
   noStroke();
-  textStyle(BOLD);
+  useFont(true);
   textSize(FONT_SIZE_BATTERY);
   text(`${Math.round(levelPercent)}%`, batteryBodyX - 10, centerY);
 
@@ -450,7 +452,7 @@ function drawBatteryIndicator(rightEdgeX, centerY, levelPercent, palette) {
   // Warning exclamation if low battery (< 20%)
   if (levelPercent <= 20) {
     fill(palette[0]);
-    textStyle(BOLD);
+    useFont(true);
     textSize(12);
     textAlign(CENTER, CENTER);
     text("!", batteryBodyX + barWidth / 2, centerY);
@@ -459,12 +461,14 @@ function drawBatteryIndicator(rightEdgeX, centerY, levelPercent, palette) {
 }
 
 // ============================================================================
-// PRELOAD OFFICIAL LUCIDE SVG ICONS
+// PRELOAD OFFICIAL LUCIDE SVG ICONS & ROBOTO FONTS
 // ============================================================================
 
 let lucideIcons = {};
 
 function preload() {
+  fontRobotoRegular = loadFont("assets/fonts/Roboto-Regular.ttf");
+  fontRobotoBold = loadFont("assets/fonts/Roboto-Bold.ttf");
   lucideIcons.sun = loadImage("assets/icons/sun.svg");
   lucideIcons.cloudSun = loadImage("assets/icons/cloud-sun.svg");
   lucideIcons.cloud = loadImage("assets/icons/cloud.svg");
@@ -473,6 +477,17 @@ function preload() {
   lucideIcons.cloudSnow = loadImage("assets/icons/cloud-snow.svg");
   lucideIcons.cloudFog = loadImage("assets/icons/cloud-fog.svg");
   lucideIcons.moon = loadImage("assets/icons/moon.svg");
+}
+
+function useFont(isBold = false) {
+  if (isBold && fontRobotoBold) {
+    textFont(fontRobotoBold);
+  } else if (!isBold && fontRobotoRegular) {
+    textFont(fontRobotoRegular);
+  } else {
+    textFont(FONT_PRIMARY);
+    textStyle(isBold ? BOLD : NORMAL);
+  }
 }
 
 // ============================================================================
