@@ -5,3 +5,7 @@ node_modules/
 .esphome/
 dist/
 build/
+.venv/
+.pio/
+.env
+secrets.yaml

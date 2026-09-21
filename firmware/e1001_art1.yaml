@@ -1,0 +1,340 @@
+# ============================================================================
+# Seeed reTerminal E1001 Generative Art (art1-test) - ESPHome Configuration
+# Version: 2026.09.21.21.53.00
+# Description: Full-bleed borderless generative art suite for Seeed E1001 (800x480).
+#              Switches between 3 generative designs and generates a new seed
+#              on every button press:
+#              - GPIO4: Next Design (New Seed)
+#              - GPIO5: Previous Design (New Seed)
+#              - GPIO3: Action / Reseed Active Design
+# ============================================================================
+
+substitutions:
+  name: "seeed-reterminal-e1001-art"
+  friendly_name: "Seeed E1001 Generative Art"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  on_boot:
+    priority: 800
+    then:
+      - output.turn_on: sd_cs_pin
+      - output.turn_off: sd_en_pin
+      - delay: 500ms
+      - component.update: eink_display
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+globals:
+  - id: design_index
+    type: int
+    restore_value: true
+    initial_value: '0'
+  - id: art_seed
+    type: int
+    restore_value: true
+    initial_value: '1001'
+
+# Enable logging over USB-UART (/dev/cu.usbserial-110)
+logger:
+  hardware_uart: UART0
+  baud_rate: 115200
+
+# Wi-Fi configuration with fallback AP
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "E1001-Art-Fallback"
+
+captive_portal:
+
+output:
+  - platform: gpio
+    pin: GPIO14
+    id: sd_cs_pin
+  - platform: gpio
+    pin: GPIO16
+    id: sd_en_pin
+
+binary_sensor:
+  # Button 2 (Next Button - GPIO4) -> Next design + New Seed
+  - platform: gpio
+    pin:
+      number: GPIO4
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Next Button"
+    on_press:
+      then:
+        - lambda: |-
+            id(design_index) = (id(design_index) + 1) % 3;
+            id(art_seed) = (int)(esp_random() % 100000) + 1;
+            ESP_LOGI("BUTTON", "Next pressed. Active design: %d, Seed: %d", id(design_index), id(art_seed));
+        - component.update: eink_display
+
+  # Button 3 (Previous Button - GPIO5) -> Prev design + New Seed
+  - platform: gpio
+    pin:
+      number: GPIO5
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Prev Button"
+    on_press:
+      then:
+        - lambda: |-
+            id(design_index) = (id(design_index) + 2) % 3;
+            id(art_seed) = (int)(esp_random() % 100000) + 1;
+            ESP_LOGI("BUTTON", "Prev pressed. Active design: %d, Seed: %d", id(design_index), id(art_seed));
+        - component.update: eink_display
+
+  # Button 1 (Action / Green Button - GPIO3) -> Reseed Active Design
+  - platform: gpio
+    pin:
+      number: GPIO3
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Action Button"
+    on_press:
+      then:
+        - lambda: |-
+            id(art_seed) = (int)(esp_random() % 100000) + 1;
+            ESP_LOGI("BUTTON", "Action pressed. Reseeding design: %d, New Seed: %d", id(design_index), id(art_seed));
+        - component.update: eink_display
+
+
+# ============================================================================
+# AUTOMATIC PATTERN ROTATION (15 SECONDS WITH NEW VARIATION SEED)
+# ============================================================================
+interval:
+  - interval: 15s
+    then:
+      - lambda: |-
+          id(design_index) = (id(design_index) + 1) % 3;
+          id(art_seed) = (int)(esp_random() % 100000) + 1;
+          ESP_LOGI("AUTOCYCLE", "15s auto-cycle triggered. Active design: %d, Seed: %d", id(design_index), id(art_seed));
+      - component.update: eink_display
+
+spi:
+  clk_pin: GPIO7
+  mosi_pin: GPIO9
+
+display:
+  - platform: waveshare_epaper
+    id: eink_display
+    cs_pin: GPIO10
+    dc_pin: GPIO11
+    reset_pin: GPIO12
+    busy_pin:
+      number: GPIO13
+      inverted: true
+    model: 7.50inv2
+    update_interval: never
+    rotation: 0
+    lambda: |-
+      const int cx = 400;
+      const int cy = 240;
+      const float seed_phase = (float)(id(art_seed) % 1000) * 0.00628f;
+
+      // ======================================================================
+      // DESIGN 0: FULL-BLEED HARMONIC TOPOLOGICAL CONTOURS (SEED-MODULATED)
+      // ======================================================================
+      if (id(design_index) == 0) {
+        const int levels = 30 + ((id(art_seed) * 7) % 41); // 30 to 70 levels
+        const int angle_steps = 180 + ((id(art_seed) * 13) % 121);
+
+        for (int l = 0; l < levels; l++) {
+          float t_norm = (float)(l + 1) / (float)levels;
+          float a_base = 12.0f + t_norm * 370.0f;
+          float b_base = 8.0f + t_norm * 220.0f;
+
+          int prev_x = 0;
+          int prev_y = 0;
+          bool has_prev = false;
+
+          for (int i = 0; i <= angle_steps; i++) {
+            float theta = (2.0f * (float)M_PI / (float)angle_steps) * (float)i;
+
+            float w1 = sinf(theta * 5.0f + (float)l * 0.38f + seed_phase) * cosf(theta * 3.0f + seed_phase * 0.5f) * 16.0f * t_norm;
+            float w2 = sinf(theta * 2.0f + (float)l * 0.16f - seed_phase * 0.7f) * 12.0f * t_norm;
+            float w3 = cosf(theta * 7.0f - (float)l * 0.28f + seed_phase * 1.2f) * 8.0f * t_norm;
+
+            float cur_a = a_base + w1 + w2;
+            float cur_b = b_base + w1 + w3;
+
+            int px = cx + (int)(cosf(theta) * cur_a);
+            int py = cy + (int)(sinf(theta) * cur_b);
+
+            if (px >= 0 && px < 800 && py >= 0 && py < 480) {
+              if (has_prev) {
+                it.line(prev_x, prev_y, px, py);
+                if (l % 5 == 0) {
+                  it.line(prev_x, prev_y + 1, px, py + 1);
+                }
+              }
+              prev_x = px;
+              prev_y = py;
+              has_prev = true;
+            } else {
+              has_prev = false;
+            }
+          }
+        }
+
+        // Concentric focal orbital ripple rings
+        for (int r = 12; r <= 150; r += 20) {
+          it.circle(cx, cy, r);
+        }
+        it.filled_circle(cx, cy, 6);
+      }
+
+      // ======================================================================
+      // DESIGN 1: MULTI-LAYER PARAMETRIC FLOW STREAMLINES (SEED-MODULATED)
+      // ======================================================================
+      else if (id(design_index) == 1) {
+        const int ribbon_count = 25 + ((id(art_seed) * 11) % 31);
+        const int curve_points = 150 + ((id(art_seed) * 17) % 101);
+
+        for (int r = 0; r < ribbon_count; r++) {
+          float t_norm = (float)r / (float)(ribbon_count - 1);
+          float y_start = -222.0f + t_norm * 444.0f;
+          int prev_x = 0;
+          int prev_y = 0;
+          bool has_prev = false;
+
+          for (int i = 0; i <= curve_points; i++) {
+            float x = -390.0f + ((float)i / (float)curve_points) * 780.0f;
+            float x_norm = x * 0.0075f;
+
+            float wave1 = sinf(x_norm * 1.8f + t_norm * 5.5f + seed_phase) * 28.0f;
+            float wave2 = cosf(x_norm * 3.4f - t_norm * 3.8f - seed_phase * 0.6f) * 16.0f;
+            float wave3 = sinf(x_norm * 0.8f + seed_phase) * 18.0f * sinf(t_norm * (float)M_PI);
+            float y = y_start + wave1 + wave2 + wave3;
+
+            int px = cx + (int)x;
+            int py = cy + (int)y;
+
+            if (px >= 0 && px < 800 && py >= 0 && py < 480) {
+              if (has_prev) {
+                it.line(prev_x, prev_y, px, py);
+                if (r % 4 == 0) {
+                  it.line(prev_x, prev_y + 1, px, py + 1);
+                }
+              }
+              prev_x = px;
+              prev_y = py;
+              has_prev = true;
+            } else {
+              has_prev = false;
+            }
+          }
+        }
+
+        // Cross-cutting harmonic perpendicular waveforms
+        const int cross_lines = 10 + ((id(art_seed) * 23) % 13);
+        for (int c = 0; c < cross_lines; c++) {
+          float x_base = -365.0f + ((float)c / (float)(cross_lines - 1)) * 730.0f;
+          int prev_x = 0;
+          int prev_y = 0;
+          bool has_prev = false;
+
+          for (int j = 0; j <= 90; j++) {
+            float y = -228.0f + ((float)j / 90.0f) * 456.0f;
+            float y_norm = y * 0.015f;
+            float x = x_base + sinf(y_norm * 2.2f + (float)c * 0.45f + seed_phase) * 22.0f * cosf(y_norm * 0.8f);
+
+            int px = cx + (int)x;
+            int py = cy + (int)y;
+
+            if (px >= 0 && px < 800 && py >= 0 && py < 480) {
+              if (has_prev) {
+                it.line(prev_x, prev_y, px, py);
+              }
+              prev_x = px;
+              prev_y = py;
+              has_prev = true;
+            } else {
+              has_prev = false;
+            }
+          }
+        }
+      }
+
+      // ======================================================================
+      // DESIGN 2: SACRED GEOMETRIC PHYLLOTAXIS & HYPERBOLIC ROSETTE (SEED-MODULATED)
+      // ======================================================================
+      else if (id(design_index) == 2) {
+        const int petals = 5 + ((id(art_seed) * 19) % 11); // 5 to 15 petals
+        const int rosette_rings = 18 + ((id(art_seed) * 29) % 19);
+        const int shell_depth = 3 + ((id(art_seed) * 31) % 5);
+
+        // 1. Hyperbolic Petal Harmonics
+        for (int p = 0; p < petals; p++) {
+          float base_angle = (2.0f * (float)M_PI / (float)petals) * (float)p + seed_phase * 0.2f;
+
+          for (int s = 1; s <= shell_depth; s++) {
+            float max_r = 140.0f + (float)s * 16.0f;
+            int prev_x = 0;
+            int prev_y = 0;
+            bool has_prev = false;
+
+            for (int a = 0; a <= 90; a++) {
+              float phi = (2.0f * (float)M_PI / 90.0f) * (float)a;
+              float rad = max_r * sinf(phi * 3.0f + seed_phase * 0.5f) * cosf(phi * 2.0f);
+              float cur_angle = base_angle + phi * 0.5f;
+
+              int px = cx + (int)(cosf(cur_angle) * rad * 1.45f);
+              int py = cy + (int)(sinf(cur_angle) * rad);
+
+              if (px >= 0 && px < 800 && py >= 0 && py < 480) {
+                if (has_prev) {
+                  it.line(prev_x, prev_y, px, py);
+                  if (p % 3 == 0) {
+                    it.line(prev_x + 1, prev_y, px + 1, py);
+                  }
+                }
+                prev_x = px;
+                prev_y = py;
+                has_prev = true;
+              } else {
+                has_prev = false;
+              }
+            }
+          }
+        }
+
+        // 2. Concentric Phyllotaxis Rosette Rings
+        for (int k = 1; k <= rosette_rings; k++) {
+          float r = (float)k * 7.5f;
+          int prev_x = 0;
+          int prev_y = 0;
+          bool has_prev = false;
+
+          for (int v = 0; v <= 100; v++) {
+            float angle = (2.0f * (float)M_PI / 100.0f) * (float)v;
+            float mod = sinf(angle * (float)petals + seed_phase) * (3.0f + (float)k * 0.25f);
+            float rad = r + mod;
+
+            int px = cx + (int)(cosf(angle) * rad * 1.55f);
+            int py = cy + (int)(sinf(angle) * rad);
+
+            if (px >= 0 && px < 800 && py >= 0 && py < 480) {
+              if (has_prev) {
+                it.line(prev_x, prev_y, px, py);
+              }
+              prev_x = px;
+              prev_y = py;
+              has_prev = true;
+            } else {
+              has_prev = false;
+            }
+          }
+        }
+
+        // 3. Central Cap
+        it.filled_circle(cx, cy, 7);
+      }

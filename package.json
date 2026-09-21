@@ -4,7 +4,9 @@
   "description": "Parent workspace and shared assets for Seeed reTerminal E1001 p5.js projects",
   "scripts": {
     "art1": "npx serve -l 8001 art1-test",
-    "serve": "npx serve -l 8001 ."
+    "serve": "npx serve -l 8001 .",
+    "flash:art1": ".venv/bin/esphome run firmware/e1001_art1.yaml --device /dev/cu.usbserial-110",
+    "flash:clock": ".venv/bin/esphome run firmware/e1001_analog_clock.yaml --device /dev/cu.usbserial-110"
   },
   "keywords": [
     "e1001",

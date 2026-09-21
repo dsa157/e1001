@@ -5,7 +5,8 @@
   "main": "sketch.js",
   "scripts": {
     "start": "npx serve -l 8001 .",
-    "dev": "npx serve -l 8001 ."
+    "dev": "npx serve -l 8001 .",
+    "flash": "../.venv/bin/esphome run ../firmware/e1001_art1.yaml --device /dev/cu.usbserial-110"
   },
   "keywords": [
     "p5js",

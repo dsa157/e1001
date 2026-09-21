@@ -1,0 +1,136 @@
+# ============================================================================
+# Seeed reTerminal E1001 Analog Clock - ESPHome Configuration
+# Version: 2026.09.21.21.04.00
+# Description: ESPHome configuration for Seeed Studio reTerminal E1001 (ESP32-S3)
+# ============================================================================
+
+substitutions:
+  name: "seeed-reterminal-e1001"
+  friendly_name: "Seeed E1001 Analog Clock"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  on_boot:
+    priority: 800
+    then:
+      - output.turn_on: sd_cs_pin
+      - output.turn_off: sd_en_pin
+      - delay: 500ms
+      - component.update: eink_display
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+# Enable logging over USB-UART (/dev/cu.usbserial-110)
+logger:
+  hardware_uart: UART0
+  baud_rate: 115200
+
+# Wi-Fi configuration with fallback AP
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "E1001-Clock-Fallback"
+
+captive_portal:
+
+output:
+  - platform: gpio
+    pin: GPIO14
+    id: sd_cs_pin
+  - platform: gpio
+    pin: GPIO16
+    id: sd_en_pin
+
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: "Asia/Bangkok"
+    on_time:
+      - seconds: 0
+        minutes: /1
+        then:
+          - component.update: eink_display
+
+spi:
+  clk_pin: GPIO7
+  mosi_pin: GPIO9
+
+display:
+  - platform: waveshare_epaper
+    id: eink_display
+    cs_pin: GPIO10
+    dc_pin: GPIO11
+    reset_pin: GPIO12
+    busy_pin:
+      number: GPIO13
+      inverted: true
+    model: 7.50inv2
+    update_interval: 60s
+    rotation: 0
+    lambda: |-
+      int cx = 400;
+      int cy = 240;
+      int r = 195;
+
+      // Draw Outer Bezel Dial Circles
+      it.circle(cx, cy, r);
+      it.circle(cx, cy, r - 8);
+
+      // Draw Hour Tick Marks
+      for (int i = 0; i < 12; i++) {
+        float angle = i * (M_PI / 6.0f);
+        int x1 = cx + (int)(sin(angle) * (r - 12));
+        int y1 = cy - (int)(cos(angle) * (r - 12));
+        int x2 = cx + (int)(sin(angle) * (r - 28));
+        int y2 = cy - (int)(cos(angle) * (r - 28));
+        it.line(x1, y1, x2, y2);
+      }
+
+      // Draw Minute Tick Marks
+      for (int i = 0; i < 60; i++) {
+        if (i % 5 == 0) continue;
+        float angle = i * (M_PI / 30.0f);
+        int x1 = cx + (int)(sin(angle) * (r - 12));
+        int y1 = cy - (int)(cos(angle) * (r - 12));
+        int x2 = cx + (int)(sin(angle) * (r - 20));
+        int y2 = cy - (int)(cos(angle) * (r - 20));
+        it.line(x1, y1, x2, y2);
+      }
+
+      // Time variables with fallback
+      int cur_hour = 10;
+      int cur_min = 10;
+      auto time = id(sntp_time).now();
+      if (time.is_valid()) {
+        cur_hour = time.hour;
+        cur_min = time.minute;
+      }
+
+      // Calculate Hand Angles
+      float hour_angle = ((cur_hour % 12) + cur_min / 60.0f) * (M_PI / 6.0f);
+      float min_angle = cur_min * (M_PI / 30.0f);
+
+      // Draw Hour Hand (Thick)
+      int hx = cx + (int)(sin(hour_angle) * 105);
+      int hy = cy - (int)(cos(hour_angle) * 105);
+      for (int d = -2; d <= 2; d++) {
+        it.line(cx + d, cy, hx + d, hy);
+      }
+
+      // Draw Minute Hand (Medium)
+      int mx = cx + (int)(sin(min_angle) * 155);
+      int my = cy - (int)(cos(min_angle) * 155);
+      for (int d = -1; d <= 1; d++) {
+        it.line(cx + d, cy, mx + d, my);
+      }
+
+      // Center Pin
+      it.filled_circle(cx, cy, 7);
+
+      // Geometric Framing & Status
+      it.rectangle(20, 20, 760, 440);
