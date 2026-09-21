@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * Seeed reTerminal E1001 - E-Ink Weather Dashboard
- * Version: 2026.09.21.23.54.00
+ * Version: 2026.09.22.00.03.00
  * Description: High-contrast, parameterizable weather dashboard designed for
  *              the Seeed reTerminal E1001 (800x480 e-paper display).
  *              Features 12h/24h clock, current temperature and conditions,
@@ -24,7 +24,7 @@ const DISPLAY_CENTER_Y = 240;              // default: 240 (Canvas center Y)
 // Seed & Random Initialization
 let GLOBAL_SEED = 1001;                    // default: 1001 (Deterministic random seed)
 
-// Typography & Font Configuration (Strictly Sans-Serif)
+// Typography & Font Configuration (Strictly Sans-Serif - Roboto Bold Base)
 const FONT_PRIMARY = "Roboto";             // default: "Roboto" (Strictly sans-serif)
 const FONT_FAMILY_STACK = "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"; // default: modern sans-serif stack
 let fontRobotoRegular = null;
@@ -468,14 +468,16 @@ function preload() {
   lucideIcons.moon = loadImage("assets/icons/moon.svg");
 }
 
-function useFont(isBold = false) {
+function useFont(isBold = true) {
   if (isBold && fontRobotoBold) {
     textFont(fontRobotoBold);
-  } else if (!isBold && fontRobotoRegular) {
+  } else if (fontRobotoBold) {
+    textFont(fontRobotoBold);
+  } else if (fontRobotoRegular) {
     textFont(fontRobotoRegular);
   } else {
     textFont(FONT_PRIMARY);
-    textStyle(isBold ? BOLD : NORMAL);
+    textStyle(BOLD);
   }
 }
 

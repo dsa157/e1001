@@ -342,42 +342,42 @@ image:
     resize: 42x42
     type: BINARY
 
-# Fonts - Clean Sans-Serif Fonts (Roboto via Google Fonts)
+# Fonts - Clean Sans-Serif Fonts (Roboto Bold as base font for everything)
 font:
-  - file: "gfonts://Roboto"
+  - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_temp_hero
     size: 48
-    glyphs: "0123456789° %/:-.,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    glyphs: "0123456789° %/:-.,|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-  - file: "gfonts://Roboto"
+  - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_time_hero
     size: 40
-    glyphs: "0123456789° %/:-.,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    glyphs: "0123456789° %/:-.,|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-  - file: "gfonts://Roboto"
+  - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_title
     size: 20
-    glyphs: "0123456789° %/:-.,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    glyphs: "0123456789° %/:-.,|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-  - file: "gfonts://Roboto"
+  - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_subtitle
     size: 15
-    glyphs: "0123456789° %/:-.,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    glyphs: "0123456789° %/:-.,|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-  - file: "gfonts://Roboto"
+  - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_card_day
     size: 16
-    glyphs: "0123456789° %/:-.,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    glyphs: "0123456789° %/:-.,|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-  - file: "gfonts://Roboto"
+  - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_card_temp
     size: 18
-    glyphs: "0123456789° %/:-.,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    glyphs: "0123456789° %/:-.,|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-  - file: "gfonts://Roboto"
+  - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_small
     size: 12
-    glyphs: "0123456789° %/:-.,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    glyphs: "0123456789° %/:-.,|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 # E-Paper Display Component (800x480 Waveshare 7.50in V2)
 # Polarity Rule: COLOR_OFF = Pure White Background, COLOR_ON = Pure Black Ink
