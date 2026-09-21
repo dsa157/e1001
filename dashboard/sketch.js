@@ -25,7 +25,7 @@ const DISPLAY_CENTER_Y = 240;              // default: 240 (Canvas center Y)
 let GLOBAL_SEED = 1001;                    // default: 1001 (Deterministic random seed)
 
 // Typography & Font Configuration (Strictly Sans-Serif)
-const FONT_PRIMARY = "sans-serif";         // default: "sans-serif" (Strictly sans-serif)
+const FONT_PRIMARY = "Roboto";         // default: "sans-serif" (Strictly sans-serif)
 const FONT_FAMILY_STACK = "'Inter', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"; // default: modern sans-serif stack
 
 // Font Sizes (Bold & Easy to Read)
@@ -54,7 +54,7 @@ const FOOTER_HEIGHT = 44;                  // default: 44 (Footer section height
 // Forecast Grid Parameters
 const FORECAST_DAYS_COUNT = 5;             // default: 5 (5-day forecast display)
 const CARD_GAP = 12;                       // default: 12 (Gap between forecast cards)
-const CARD_CORNER_RADIUS = 8;              // default: 8 (Forecast card border radius)
+const CARD_CORNER_RADIUS = 20;              // default: 8 (Forecast card border radius)
 const ICON_SIZE_HERO = 54;                 // default: 54 (Header weather icon diameter)
 const ICON_SIZE_CARD = 48;                 // default: 48 (Card weather icon diameter)
 
@@ -63,7 +63,7 @@ const BATTERY_WIDTH = 48;                  // default: 48 (Battery icon width)
 const BATTERY_HEIGHT = 22;                 // default: 22 (Battery icon height)
 const BATTERY_NUB_WIDTH = 4;               // default: 4 (Battery terminal nub width)
 const BATTERY_NUB_HEIGHT = 10;             // default: 10 (Battery terminal nub height)
-let BATTERY_LEVEL = 85;                    // default: 85 (Simulated battery percentage 0-100)
+let BATTERY_LEVEL = 23;                    // default: 85 (Simulated battery percentage 0-100)
 
 // Units & Mode Configuration
 let USE_24_HOUR_TIME = false;              // default: false (12-hour format default, true = 24-hour)
@@ -189,7 +189,7 @@ function setup() {
 function draw() {
   // Center rendering coordinate anchor
   push();
-  
+
   // Background selection from palette
   const activePalette = COLOR_PALETTES[ACTIVE_PALETTE_INDEX % COLOR_PALETTES.length];
   const bgColor = activePalette[BACKGROUND_COLOR_INDEX % activePalette.length];
@@ -351,8 +351,8 @@ function drawForecastCard(x, y, w, h, data, isToday, palette) {
   textSize(FONT_SIZE_CARD_TEMP_MIN);
   text(lowStr, x + w / 2 + 22, y + 172);
 
-  // Temperature Mini-Bar Indicator
-  drawTempRangeBar(x + 14, y + 202, w - 28, 6, data.tempMinC, data.tempMaxC, palette);
+  // Solid Black Card Separator
+  drawCardSeparator(x + 16, y + 204, w - 32, palette);
 
   // "TODAY" Highlight Ribbon if it's the current day
   if (isToday) {
@@ -368,21 +368,11 @@ function drawForecastCard(x, y, w, h, data, isToday, palette) {
   pop();
 }
 
-function drawTempRangeBar(x, y, w, h, minC, maxC, palette) {
+function drawCardSeparator(x, y, w, palette) {
   push();
-  // Bar background
-  noStroke();
-  fill(palette[1]);
-  rect(x, y, w, h, h / 2);
-
-  // Active temperature segment (normalized against 0°C - 45°C range)
-  const normMin = constrain(map(minC, 0, 45, 0, 1), 0, 0.9);
-  const normMax = constrain(map(maxC, 0, 45, 0, 1), normMin + 0.1, 1);
-  const segX = x + normMin * w;
-  const segW = (normMax - normMin) * w;
-
-  fill(palette[4]);
-  rect(segX, y, segW, h, h / 2);
+  stroke(palette[4]);
+  strokeWeight(2);
+  line(x, y, x + w, y);
   pop();
 }
 

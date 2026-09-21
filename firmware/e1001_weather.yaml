@@ -547,9 +547,9 @@ display:
         it.printf(cx + card_w / 2 - 20, body_y + 165, id(font_card_temp), COLOR_ON, TextAlign::TOP_CENTER, "%d°", max_val);
         it.printf(cx + card_w / 2 + 20, body_y + 168, id(font_subtitle), COLOR_ON, TextAlign::TOP_CENTER, "%d°", min_val);
 
-        // Range Bar
-        it.rectangle(cx + 14, body_y + 200, card_w - 28, 6, COLOR_ON);
-        it.filled_rectangle(cx + 26, body_y + 200, card_w - 52, 6, COLOR_ON);
+        // Solid Black Separator Line
+        it.line(cx + 16, body_y + 204, cx + card_w - 16, body_y + 204, COLOR_ON);
+        it.line(cx + 16, body_y + 205, cx + card_w - 16, body_y + 205, COLOR_ON);
 
         // Current Ribbon
         if (i == 0) {
