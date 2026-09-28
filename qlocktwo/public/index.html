@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+  QLOCKTWO E1001 E-Ink Frame Web Application
+  Version: 2026.09.28.16.24.00
+  A typographic clock application designed for reTerminal E1001 e-ink displays and modern browsers.
+-->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>QLOCKTWO - E1001 Frame</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="appContainer">
+    <!-- E1001 E-Ink Display Frame (800x480) -->
+    <main id="e1001Frame">
+      <!-- 4 Corner Minute Indicator Dots -->
+      <div id="dotTL" class="corner-dot top-left" title="Minute +1"></div>
+      <div id="dotTR" class="corner-dot top-right" title="Minute +2"></div>
+      <div id="dotBR" class="corner-dot bottom-right" title="Minute +3"></div>
+      <div id="dotBL" class="corner-dot bottom-left" title="Minute +4"></div>
+
+      <!-- Letter Grid Matrix -->
+      <div id="matrixGrid" class="matrix-grid"></div>
+
+      <!-- Subtle E-Ink Frame Texture Overlay -->
+      <div id="textureOverlay"></div>
+    </main>
+
+    <!-- Controls & Status Toolbar -->
+    <footer id="controlBar">
+      <div class="control-row">
+        <div class="control-group">
+          <label for="langSelect">Language:</label>
+          <select id="langSelect" aria-label="Select Language"></select>
+        </div>
+
+        <div class="control-group">
+          <label for="paletteSelect">Theme:</label>
+          <select id="paletteSelect" aria-label="Select Color Palette"></select>
+        </div>
+
+        <div class="control-group unlit-color-group">
+          <label for="unlitColorText">Unlit Gray:</label>
+          <input type="color" id="unlitColorPicker" value="#EAEAEA" title="Pick unlit color">
+          <input type="text" id="unlitColorText" value="#EAEAEA" maxlength="7" size="7" placeholder="#EAEAEA" title="Hex code for unlit letters">
+          <button id="resetUnlitBtn" type="button" title="Reset unlit color to palette default">Reset</button>
+        </div>
+      </div>
+
+      <div class="control-row">
+        <div class="control-group simulator-group">
+          <label for="timeSim">Simulator:</label>
+          <div class="time-controls">
+            <button id="btnMinus5" type="button" title="Minus 5 minutes">-5m</button>
+            <button id="btnMinus1" type="button" title="Minus 1 minute">-1m</button>
+            <input type="time" id="timeSim" step="60" aria-label="Simulate Time">
+            <button id="btnPlus1" type="button" title="Plus 1 minute">+1m</button>
+            <button id="btnPlus5" type="button" title="Plus 5 minutes">+5m</button>
+            <button id="resetTimeBtn" type="button" title="Switch to live device time">Live</button>
+          </div>
+        </div>
+
+        <div class="control-group status-group">
+          <span id="timeStatusLabel">Live</span>
+          <a id="pngLink" href="/render.png" target="_blank" rel="noopener">E-Ink Image (/render.png)</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

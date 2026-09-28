@@ -1,0 +1,279 @@
+/**
+ * QLOCKTWO E1001 E-Ink Frame Stylesheet
+ * Version: 2026.09.28.16.24.00
+ *
+ * Provides responsive centering, layout for 800x480 e1001 frame resolution,
+ * typographic matrix styling, corner minute dots, and smooth transitions.
+ */
+
+:root {
+  --bg-color: #FFFFFF; /* default: #FFFFFF (E-Ink Paper Light background) */
+  --lit-color: #111827; /* default: #111827 (Carbon black lit text) */
+  --accent-color: #4B5563; /* default: #4B5563 (Accent/corner dots) */
+  --muted-color: #9CA3AF; /* default: #9CA3AF (Muted gray details) */
+  --unlit-color: #EAEAEA; /* default: #EAEAEA (Light palette disabled gray) */
+  --glow-color: transparent; /* default: transparent */
+  --font-family: 'Helvetica Neue', Helvetica, Arial, -apple-system, sans-serif;
+  --transition-speed: 0.35s; /* default: 0.35s */
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+body {
+  background-color: #0b0c0e;
+  color: #d1d5db;
+  font-family: var(--font-family);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow-x: hidden;
+  padding: 20px;
+}
+
+#appContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 900px;
+}
+
+/* E1001 Physical Display Frame Container (800x480 standard ratio) */
+#e1001Frame {
+  position: relative;
+  width: 800px;
+  height: 480px;
+  background-color: var(--bg-color);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: background-color var(--transition-speed) ease;
+}
+
+/* Center Letter Matrix Grid (11 cols x 10 rows) */
+.matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(11, 1fr);
+  grid-template-rows: repeat(10, 1fr);
+  width: 520px;
+  height: 400px;
+  gap: 4px;
+  text-align: center;
+  z-index: 2;
+}
+
+.matrix-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--unlit-color);
+  transition: color var(--transition-speed) ease, text-shadow var(--transition-speed) ease, opacity var(--transition-speed) ease;
+  line-height: 1;
+}
+
+.matrix-cell.lit {
+  color: var(--lit-color);
+  text-shadow: 0 0 10px var(--glow-color);
+}
+
+/* 4 Corner Minute Indicator Dots */
+.corner-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--unlit-color);
+  transition: background-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+  z-index: 2;
+}
+
+.corner-dot.lit {
+  background-color: var(--lit-color);
+  box-shadow: 0 0 8px var(--glow-color);
+}
+
+.corner-dot.top-left {
+  top: 24px;
+  left: 24px;
+}
+
+.corner-dot.top-right {
+  top: 24px;
+  right: 24px;
+}
+
+.corner-dot.bottom-right {
+  bottom: 24px;
+  right: 24px;
+}
+
+.corner-dot.bottom-left {
+  bottom: 24px;
+  left: 24px;
+}
+
+/* Texture overlay for subtle e-ink screen feel */
+#textureOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.015) 0%, rgba(0, 0, 0, 0.08) 100%);
+  z-index: 3;
+}
+
+/* Toolbar & Controls */
+#controlBar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 20px;
+  background: rgba(26, 29, 36, 0.85);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 13px;
+  width: 800px;
+}
+
+.control-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.control-group label {
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.unlit-color-group input[type="color"] {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #374151;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.unlit-color-group input[type="text"] {
+  width: 76px;
+  text-align: center;
+  font-family: monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.time-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+select, input[type="text"], input[type="time"], button {
+  background: #111827;
+  color: #f3f4f6;
+  border: 1px solid #374151;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+select:focus, input[type="text"]:focus, input[type="time"]:focus, button:focus {
+  border-color: #60a5fa;
+}
+
+button:hover {
+  background: #1f2937;
+  border-color: #4b5563;
+}
+
+#resetTimeBtn.active-live {
+  background: #059669;
+  border-color: #10b981;
+  color: #ffffff;
+}
+
+.status-group {
+  gap: 10px;
+}
+
+#timeStatusLabel {
+  font-size: 12px;
+  color: #10b981;
+  font-weight: 600;
+  padding: 3px 8px;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 4px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+#timeStatusLabel.simulated {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.status-group a {
+  color: #60a5fa;
+  text-decoration: none;
+  font-size: 12px;
+  transition: color 0.2s ease;
+}
+
+.status-group a:hover {
+  color: #93c5fd;
+  text-decoration: underline;
+}
+
+/* Mobile & Scaling Responsive Rules */
+@media (max-width: 840px) {
+  #e1001Frame {
+    transform: scale(calc((100vw - 40px) / 800));
+    transform-origin: center center;
+    margin: -30px 0;
+  }
+
+  #controlBar {
+    width: 100%;
+  }
+
+  .control-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .control-group {
+    justify-content: space-between;
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "qlocktwo",
+  "version": "1.0.0",
+  "description": "QLOCKTWO for E1001 E-Ink Frame",
+  "main": "server.js",
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dsa157/e1001.git",
+    "directory": "qlocktwo"
+  },
+  "acknowledgment": "Based on the original HTML/jQuery implementation by Nathan Pearson (https://github.com/ndpdev/qlocktwo.git)",
+  "keywords": [
+    "qlocktwo",
+    "e-ink",
+    "e1001",
+    "typographic-clock"
+  ],
+  "author": "dsa157",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dsa157/e1001/issues"
+  },
+  "homepage": "https://github.com/dsa157/e1001/tree/main/qlocktwo#readme",
+  "dependencies": {
+    "@napi-rs/canvas": "^1.0.9",
+    "express": "^5.2.1"
+  }
+}
