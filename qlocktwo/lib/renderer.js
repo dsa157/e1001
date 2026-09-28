@@ -1,10 +1,11 @@
 /**
  * QLOCKTWO E1001 E-Ink Canvas Renderer
- * Version: 2026.09.28.16.21.00
+ * Version: 2026.09.28.16.46.00
  *
  * Renders the QLOCKTWO matrix and corner minute indicators onto an 800x480 (or custom)
  * canvas for the reTerminal E1001 E-Ink frame. Features seedable noise/dither texture,
- * 5 curated Adobe Kuler all-grayscale e-ink palettes, corner minute dots, and configurable layout.
+ * 5 curated Adobe Kuler all-grayscale e-ink palettes with uniform 28px typography,
+ * illuminated-only corner minute dots, and centered layout without footer.
  */
 
 const { createCanvas } = require('@napi-rs/canvas');
@@ -22,27 +23,26 @@ const CANVAS_WIDTH = 800; // default: 800 (E1001 display landscape width)
 const CANVAS_HEIGHT = 480; // default: 480 (E1001 display landscape height)
 const GRID_COLUMNS = 11; // default: 11 (Standard QlockTwo columns)
 const GRID_ROWS = 10; // default: 10 (Standard QlockTwo rows)
-const GRID_WIDTH = 480; // default: 480 (Matrix display width in pixels)
-const GRID_HEIGHT = 400; // default: 400 (Matrix display height in pixels)
-const FONT_SIZE = 28; // default: 28 (Font size for matrix letters)
+const GRID_WIDTH = 520; // default: 520 (Matrix display width in pixels)
+const GRID_HEIGHT = 420; // default: 420 (Matrix display height in pixels)
+const FONT_SIZE = 28; // default: 28 (Font size for both lit and unlit matrix letters)
 const FONT_FAMILY = 'Helvetica, -apple-system, sans-serif'; // default: 'Helvetica, -apple-system, sans-serif'
-const CORNER_DOT_RADIUS = 5; // default: 5 (Radius of corner minute dots)
+const CORNER_DOT_RADIUS = 6; // default: 6 (Radius of corner minute dots)
 const CORNER_DOT_OFFSET = 24; // default: 24 (Distance from frame edge for corner dots)
 const GLOW_INTENSITY = 0; // default: 0 (Set to 0 for crisp e-ink rendering)
-const SHOW_HEADER_INFO = false; // default: false (Optional minimal header info)
 
-// --- 5 ADOBE KULER GRAYSCALE COLOR PALETTES ---
-// Palette 0: "E-Ink Paper Light" (Adobe Kuler: Pure Alabaster & Carbon Ink - #EAEAEA unlit)
-// Palette 1: "E-Ink Classic Dark" (Adobe Kuler: Charcoal & High-Contrast White)
-// Palette 2: "E-Ink Neutral Silver" (Adobe Kuler: Neutral Midtone Grayscale)
-// Palette 3: "E-Ink Off-White Paper" (Adobe Kuler: Soft Bone & Charcoal)
-// Palette 4: "E-Ink Deep Obsidian" (Adobe Kuler: Dark Slate Grayscale)
+// --- 5 ADOBE KULER GRAYSCALE COLOR PALETTES (Visible Unlit Gray Values) ---
+// Palette 0: "E-Ink Paper Light" (Adobe Kuler: Pure Alabaster & Carbon Ink - Visible #A0A0A0 unlit)
+// Palette 1: "E-Ink Classic Dark" (Adobe Kuler: Charcoal & High-Contrast White - Visible #484E55 unlit)
+// Palette 2: "E-Ink Neutral Silver" (Adobe Kuler: Neutral Midtone Grayscale - Visible #555555 unlit)
+// Palette 3: "E-Ink Off-White Paper" (Adobe Kuler: Soft Bone & Charcoal - Visible #9A9A98 unlit)
+// Palette 4: "E-Ink Deep Obsidian" (Adobe Kuler: Dark Slate Grayscale - Visible #484A50 unlit)
 const COLOR_PALETTES = [
-  ['#FFFFFF', '#111827', '#4B5563', '#9CA3AF', '#EAEAEA'], // 0: E-Ink Paper Light (Default: #EAEAEA disabled gray)
-  ['#101214', '#FFFFFF', '#F0F0F0', '#6C757D', '#24282D'], // 1: E-Ink Classic Dark
-  ['#1E1E1E', '#F2F2F2', '#CCCCCC', '#777777', '#333333'], // 2: E-Ink Neutral Silver
-  ['#F2F2F0', '#1C1C1C', '#505050', '#888888', '#DCDCDA'], // 3: E-Ink Off-White Paper
-  ['#141618', '#F5F5F7', '#A0A0A5', '#55555A', '#222428']  // 4: E-Ink Deep Obsidian
+  ['#FFFFFF', '#111827', '#4B5563', '#6B7280', '#A0A0A0'], // 0: E-Ink Paper Light (Default: visible #A0A0A0 unlit)
+  ['#101214', '#FFFFFF', '#F0F0F0', '#9CA3AF', '#484E55'], // 1: E-Ink Classic Dark (Visible dark gray unlit)
+  ['#1E1E1E', '#F2F2F2', '#CCCCCC', '#AAAAAA', '#555555'], // 2: E-Ink Neutral Silver
+  ['#F2F2F0', '#1C1C1C', '#505050', '#707070', '#9A9A98'], // 3: E-Ink Off-White Paper
+  ['#141618', '#F5F5F7', '#A0A0A5', '#7A7A80', '#484A50']  // 4: E-Ink Deep Obsidian
 ];
 
 /**
@@ -95,7 +95,7 @@ function renderToBuffer(qlockState, options = {}) {
     ctx.fill();
   }
 
-  // Calculate centered grid layout
+  // Calculate centered grid layout (no footer)
   const gridW = options.gridWidth || GRID_WIDTH;
   const gridH = options.gridHeight || GRID_HEIGHT;
   const startX = Math.round((width - gridW) / 2);
@@ -110,7 +110,7 @@ function renderToBuffer(qlockState, options = {}) {
   const dotR = CORNER_DOT_RADIUS;
   const cornerMargin = CORNER_DOT_OFFSET;
 
-  // Corner Minute Dots
+  // Corner Minute Dots: ONLY draw lit dots (unlit dots are not rendered)
   const corners = [
     { x: cornerMargin, y: cornerMargin, isLit: qlockState.corners.topLeft }, // Minute +1
     { x: width - cornerMargin, y: cornerMargin, isLit: qlockState.corners.topRight }, // Minute +2
@@ -119,13 +119,15 @@ function renderToBuffer(qlockState, options = {}) {
   ];
 
   corners.forEach(corner => {
-    ctx.beginPath();
-    ctx.arc(corner.x, corner.y, dotR, 0, Math.PI * 2);
-    ctx.fillStyle = corner.isLit ? litTextColor : unlitTextColor;
-    ctx.fill();
+    if (corner.isLit) {
+      ctx.beginPath();
+      ctx.arc(corner.x, corner.y, dotR, 0, Math.PI * 2);
+      ctx.fillStyle = litTextColor;
+      ctx.fill();
+    }
   });
 
-  // Render Grid Characters
+  // Render Grid Characters: Same 28px font size for both lit & unlit
   ctx.font = `600 ${FONT_SIZE}px ${FONT_FAMILY}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -144,14 +146,6 @@ function renderToBuffer(qlockState, options = {}) {
       }
     });
   });
-
-  // Minimal optional footer
-  if (options.showFooter) {
-    ctx.font = `400 12px ${FONT_FAMILY}`;
-    ctx.fillStyle = palette[MUTED_COLOR_INDEX];
-    ctx.textAlign = 'center';
-    ctx.fillText(`QLOCKTWO • ${qlockState.languageName.toUpperCase()}`, width / 2, height - 12);
-  }
 
   return canvas.toBuffer('image/png');
 }

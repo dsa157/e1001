@@ -1,17 +1,17 @@
 /**
  * QLOCKTWO E1001 E-Ink Frame Stylesheet
- * Version: 2026.09.28.16.24.00
+ * Version: 2026.09.28.16.46.00
  *
  * Provides responsive centering, layout for 800x480 e1001 frame resolution,
- * typographic matrix styling, corner minute dots, and smooth transitions.
+ * uniform 28px typographic matrix styling, hidden unlit corner dots, and smooth transitions.
  */
 
 :root {
   --bg-color: #FFFFFF; /* default: #FFFFFF (E-Ink Paper Light background) */
   --lit-color: #111827; /* default: #111827 (Carbon black lit text) */
   --accent-color: #4B5563; /* default: #4B5563 (Accent/corner dots) */
-  --muted-color: #9CA3AF; /* default: #9CA3AF (Muted gray details) */
-  --unlit-color: #EAEAEA; /* default: #EAEAEA (Light palette disabled gray) */
+  --muted-color: #6B7280; /* default: #6B7280 (Muted gray details) */
+  --unlit-color: #A0A0A0; /* default: #A0A0A0 (Visible unlit gray) */
   --glow-color: transparent; /* default: transparent */
   --font-family: 'Helvetica Neue', Helvetica, Arial, -apple-system, sans-serif;
   --transition-speed: 0.35s; /* default: 0.35s */
@@ -69,7 +69,7 @@ body {
   grid-template-columns: repeat(11, 1fr);
   grid-template-rows: repeat(10, 1fr);
   width: 520px;
-  height: 400px;
+  height: 420px;
   gap: 4px;
   text-align: center;
   z-index: 2;
@@ -79,31 +79,36 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
-  font-weight: 600;
+  font-size: 28px;
+  font-weight: 500;
   letter-spacing: 2px;
   color: var(--unlit-color);
-  transition: color var(--transition-speed) ease, text-shadow var(--transition-speed) ease, opacity var(--transition-speed) ease;
+  transition: color var(--transition-speed) ease, text-shadow var(--transition-speed) ease, font-weight var(--transition-speed) ease;
   line-height: 1;
 }
 
 .matrix-cell.lit {
+  font-size: 28px;
+  font-weight: 700;
   color: var(--lit-color);
   text-shadow: 0 0 10px var(--glow-color);
 }
 
-/* 4 Corner Minute Indicator Dots */
+/* 4 Corner Minute Indicator Dots: Hidden when unlit */
 .corner-dot {
   position: absolute;
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  background-color: var(--unlit-color);
-  transition: background-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+  background-color: transparent;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-speed) ease, background-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
   z-index: 2;
 }
 
 .corner-dot.lit {
+  opacity: 1;
   background-color: var(--lit-color);
   box-shadow: 0 0 8px var(--glow-color);
 }

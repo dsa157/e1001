@@ -1,10 +1,10 @@
 /**
  * QLOCKTWO E1001 Interactive Client Application
- * Version: 2026.09.28.16.24.00
+ * Version: 2026.09.28.16.43.00
  *
  * Handles DOM grid generation, live clock synchronization, corner minute updates,
- * 5 Adobe Kuler grayscale theme palette switching, custom unlit color adjustment,
- * time simulation, and language selection.
+ * 5 Adobe Kuler grayscale theme palette switching with high-contrast unlit values,
+ * custom unlit color adjustment, time simulation, and language selection.
  */
 
 // --- CONFIGURATION PARAMETERS ---
@@ -18,36 +18,36 @@ const MUTED_COLOR_INDEX = 3; // default: 3 (Color index for secondary details)
 const UNLIT_TEXT_COLOR_INDEX = 4; // default: 4 (Color index for unlit letters)
 const UPDATE_INTERVAL_MS = 1000; // default: 1000 (Poll / sync interval in milliseconds)
 
-// --- 5 ADOBE KULER GRAYSCALE COLOR PALETTES ---
-// Palette 0: "E-Ink Paper Light" (Adobe Kuler: Pure Alabaster & Carbon Ink - #EAEAEA disabled gray)
-// Palette 1: "E-Ink Classic Dark" (Adobe Kuler: Charcoal & High-Contrast White)
-// Palette 2: "E-Ink Neutral Silver" (Adobe Kuler: Neutral Midtone Grayscale)
-// Palette 3: "E-Ink Off-White Paper" (Adobe Kuler: Soft Bone & Charcoal)
-// Palette 4: "E-Ink Deep Obsidian" (Adobe Kuler: Dark Slate Grayscale)
+// --- 5 ADOBE KULER GRAYSCALE COLOR PALETTES (High Contrast Unlit Values) ---
+// Palette 0: "E-Ink Paper Light" (Adobe Kuler: Pure Alabaster & Carbon Ink - Visible #A0A0A0 unlit)
+// Palette 1: "E-Ink Classic Dark" (Adobe Kuler: Charcoal & High-Contrast White - Visible #484E55 unlit)
+// Palette 2: "E-Ink Neutral Silver" (Adobe Kuler: Neutral Midtone Grayscale - Visible #555555 unlit)
+// Palette 3: "E-Ink Off-White Paper" (Adobe Kuler: Soft Bone & Charcoal - Visible #9A9A98 unlit)
+// Palette 4: "E-Ink Deep Obsidian" (Adobe Kuler: Dark Slate Grayscale - Visible #484A50 unlit)
 const PALETTES = [
   {
     name: 'E-Ink Paper Light',
-    colors: ['#FFFFFF', '#111827', '#4B5563', '#9CA3AF', '#EAEAEA'],
+    colors: ['#FFFFFF', '#111827', '#4B5563', '#6B7280', '#A0A0A0'],
     glow: 'transparent'
   },
   {
     name: 'E-Ink Classic Dark',
-    colors: ['#101214', '#FFFFFF', '#F0F0F0', '#6C757D', '#24282D'],
+    colors: ['#101214', '#FFFFFF', '#F0F0F0', '#9CA3AF', '#484E55'],
     glow: 'rgba(255, 255, 255, 0.4)'
   },
   {
     name: 'E-Ink Neutral Silver',
-    colors: ['#1E1E1E', '#F2F2F2', '#CCCCCC', '#777777', '#333333'],
+    colors: ['#1E1E1E', '#F2F2F2', '#CCCCCC', '#AAAAAA', '#555555'],
     glow: 'rgba(242, 242, 242, 0.35)'
   },
   {
     name: 'E-Ink Off-White Paper',
-    colors: ['#F2F2F0', '#1C1C1C', '#505050', '#888888', '#DCDCDA'],
+    colors: ['#F2F2F0', '#1C1C1C', '#505050', '#707070', '#9A9A98'],
     glow: 'transparent'
   },
   {
     name: 'E-Ink Deep Obsidian',
-    colors: ['#141618', '#F5F5F7', '#A0A0A5', '#55555A', '#222428'],
+    colors: ['#141618', '#F5F5F7', '#A0A0A5', '#7A7A80', '#484A50'],
     glow: 'rgba(245, 245, 247, 0.35)'
   }
 ];
