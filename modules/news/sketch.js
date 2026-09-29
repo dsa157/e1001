@@ -1,13 +1,14 @@
 /**
  * ============================================================================
  * Seeed reTerminal E1001 - World News Screen (p5.js)
- * Version: 2026.09.29.21.15.00
+ * Version: 2026.09.29.21.40.00
  * 
  * Description:
  * High-contrast editorial World News screen for Seeed reTerminal E1001 (800x480).
- * Features 8 rounded headline strip cards with high-contrast source pills,
+ * Features 6 rounded headline strip cards with high-contrast source pills,
  * bold headlines, right-aligned relative time badges, 36px title matching time,
  * 20px subhead matching date, persistent cache, and <= 10 req/hr rate limiting.
+ * Between live refreshes, cycles through sets of 6 from up to 30 cached articles.
  * 
  * Attribution:
  * Created for Seeed reTerminal E1001 Dashboard Hub
@@ -23,10 +24,11 @@ const CANVAS_WIDTH = 800;                     // Default: 800 (Native screen wid
 const CANVAS_HEIGHT = 480;                    // Default: 480 (Native screen height in px)
 
 // Layout Parameters
-const MAX_HEADLINES_DISPLAY = 8;              // Default: 8 (Stories to display)
+const MAX_HEADLINES_DISPLAY = 6;              // Default: 6 (Stories per page)
+const STORIES_TOTAL = 30;                     // Default: 30 (Max articles to cache/cycle through)
 const START_Y = 104;                          // Default: 104 (Starting Y for headline rows)
-const ROW_HEIGHT = 44;                        // Default: 44 (Row spacing in px)
-const CARD_HEIGHT = 38;                       // Default: 38 (Card container height in px)
+const ROW_HEIGHT = 60;                        // Default: 60 (Row spacing in px for 6-story layout)
+const CARD_HEIGHT = 52;                       // Default: 52 (Card container height for 6-story layout)
 const HEADLINE_FONT_SIZE = 16;                // Default: 16 (Headline font size in px)
 const BADGE_WIDTH = 76;                       // Default: 76 (Source badge pill width)
 const BADGE_HEIGHT = 24;                      // Default: 24 (Source badge pill height)
@@ -53,7 +55,8 @@ let MUTED_COLOR_INDEX = 2;    // Default: 2
 let BORDER_COLOR_INDEX = 3;   // Default: 3
 
 // News State
-let newsArticles = [];
+let newsArticles = [];        // All cached articles (up to STORIES_TOTAL)
+let currentPageIndex = 0;     // Current page of 6 stories to display
 let lastQueryTime = 0;
 let requestCountLastHour = 0;
 let isCached = true;
@@ -67,7 +70,15 @@ function setup() {
   }
   textFont('Roboto, sans-serif');
   fetchNewsData();
+  // Live refresh timer
   setInterval(fetchNewsData, REFRESH_INTERVAL_SEC * 1000);
+  // Between-refresh page cycling: advance page every dwell period (same as module dwell)
+  setInterval(() => {
+    if (newsArticles.length > MAX_HEADLINES_DISPLAY) {
+      advancePage();
+      redrawScreen();
+    }
+  }, 30 * 1000); // default: 30s between page advances
 }
 
 async function fetchNewsData() {
@@ -75,10 +86,11 @@ async function fetchNewsData() {
     const res = await fetch('/api/news');
     if (res.ok) {
       const data = await res.json();
-      newsArticles = data.articles || [];
+      newsArticles = (data.articles || []).slice(0, STORIES_TOTAL);
       lastQueryTime = data.lastQueryTime || Date.now();
       requestCountLastHour = data.requestCountLastHour || 0;
       isCached = data.cached !== undefined ? data.cached : true;
+      currentPageIndex = 0; // Reset to page 1 on fresh fetch
       redrawScreen();
       return;
     }
@@ -95,8 +107,13 @@ async function fetchNewsData() {
     { title: "New Quantum Computing Architecture Demonstrates Room-Temperature Coherence", author: "SCIENCE", published: new Date().toISOString() },
     { title: "Global Atmospheric Monitoring Network Deploys Next-Gen Sensors", author: "CLIMATE", published: new Date().toISOString() },
     { title: "High-Speed Rail Expansion Links Major Regional Logistics Corridors", author: "TRANSIT", published: new Date().toISOString() },
-    { title: "Deep Ocean Exploration Fleet Maps Uncharted Pacific Seabed Trenches", author: "OCEANIC", published: new Date().toISOString() }
+    { title: "Deep Ocean Exploration Fleet Maps Uncharted Pacific Seabed Trenches", author: "OCEANIC", published: new Date().toISOString() },
+    { title: "Global Leaders Agree on New Climate Finance Framework", author: "WORLD", published: new Date().toISOString() },
+    { title: "Fusion Energy Startup Achieves Net Energy Gain in Test Reactor", author: "SCIENCE", published: new Date().toISOString() },
+    { title: "AI Regulation Framework Adopted by Major Economies", author: "TECH", published: new Date().toISOString() },
+    { title: "Pacific Ocean Plastic Cleanup Initiative Expands Coverage", author: "OCEANIC", published: new Date().toISOString() }
   ];
+  currentPageIndex = 0;
   redrawScreen();
 }
 
@@ -153,6 +170,14 @@ function truncateString(txt, maxWidth) {
   return truncated.trim() + '…';
 }
 
+/**
+ * Advance to the next page of 6 stories from the cached pool
+ */
+function advancePage() {
+  const totalPages = Math.max(1, Math.ceil(newsArticles.length / MAX_HEADLINES_DISPLAY));
+  currentPageIndex = (currentPageIndex + 1) % totalPages;
+}
+
 function redrawScreen() {
   const palette = COLOR_PALETTES[ACTIVE_PALETTE_INDEX % COLOR_PALETTES.length];
   const cBg = palette[BG_COLOR_INDEX % palette.length];
@@ -160,6 +185,11 @@ function redrawScreen() {
   const cMuted = palette[MUTED_COLOR_INDEX % palette.length];
   const cBorder = palette[BORDER_COLOR_INDEX % palette.length];
   const cCardBg = ACTIVE_PALETTE_INDEX === 3 ? '#2A2D32' : (ACTIVE_PALETTE_INDEX === 0 ? '#F8F9FA' : '#EAECEF');
+
+  // Page selection: pick 6 articles from the current page
+  const totalPages = Math.max(1, Math.ceil(newsArticles.length / MAX_HEADLINES_DISPLAY));
+  const pageStart = currentPageIndex * MAX_HEADLINES_DISPLAY;
+  const displayArticles = newsArticles.slice(pageStart, pageStart + MAX_HEADLINES_DISPLAY);
 
   // 1. Background
   background(cBg);
@@ -182,14 +212,14 @@ function redrawScreen() {
   textStyle(BOLD);
   text('World News', 24, 52);
 
-  // Subheading: "Updated" & "Next Update" (20px matching date)
+  // Subheading: "Updated" & page indicator (20px matching date)
   textSize(20);
   fill(cMuted);
   const lastQueryDate = new Date(lastQueryTime || Date.now());
   const nextUpdateDate = new Date((lastQueryTime || Date.now()) + (REFRESH_INTERVAL_SEC * 1000));
   const lastQueryTimeStr = formatTimeStr(lastQueryDate, USE_24H);
   const nextUpdateTimeStr = formatTimeStr(nextUpdateDate, USE_24H);
-  const statusTag = `Updated ${lastQueryTimeStr} • Next Update ${nextUpdateTimeStr}`;
+  const statusTag = `Updated ${lastQueryTimeStr} • Next ${nextUpdateTimeStr}  [Page ${currentPageIndex + 1}/${totalPages}]`;
   text(statusTag, 24, 84);
 
   // 5. Header Right: Clock & Date (exact match with crypto module header)
@@ -210,11 +240,10 @@ function redrawScreen() {
   strokeWeight(1.5);
   line(24, 94, CANVAS_WIDTH - 24, 94);
 
-  // 7. 8 Editorial Headline Strip Cards
+  // 7. 6 Editorial Headline Strip Cards (page cycling)
   const cardWidth = CANVAS_WIDTH - 48; // 752px
   const headlineStartX = 24 + 10 + BADGE_WIDTH + 14; // ~124px
   const maxHeadlineWidth = cardWidth - (headlineStartX - 24) - 56; // ~572px
-  const displayArticles = newsArticles.slice(0, MAX_HEADLINES_DISPLAY);
 
   displayArticles.forEach((art, idx) => {
     const y = START_Y + idx * ROW_HEIGHT;
@@ -240,7 +269,7 @@ function redrawScreen() {
     const sourceText = getSourceBadge(art);
     text(sourceText, badgeX + BADGE_WIDTH / 2, badgeY + BADGE_HEIGHT / 2);
 
-    // Headline Text (Bold 16px, vertically aligned)
+    // Headline Text (Bold 16px, vertically centered)
     fill(cText);
     textAlign(LEFT, CENTER);
     textSize(HEADLINE_FONT_SIZE);

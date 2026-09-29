@@ -1,12 +1,12 @@
 /**
  * ============================================================================
  * Seeed reTerminal E1001 - E-Ink Weather Dashboard
- * Version: 2026.09.29.14.24.00
+ * Version: 2026.09.29.21.40.00
  * Description: High-contrast, parameterizable weather dashboard designed for
  *              the Seeed reTerminal E1001 (800x480 e-paper display).
  *              Features 12h/24h clock, current temperature and conditions,
- *              5-day forecast grid with vector weather glyphs, and battery gauge
- *              powered by the free Open-Meteo API.
+ *              5-day forecast grid with Lucide SVG weather icons (absolute paths),
+ *              and battery gauge powered by the free Open-Meteo API.
  * ============================================================================
  */
 
@@ -456,16 +456,17 @@ function drawBatteryIndicator(rightEdgeX, centerY, levelPercent, palette) {
 let lucideIcons = {};
 
 function preload() {
-  fontRobotoRegular = loadFont("../../common/fonts/Roboto-Regular.ttf");
-  fontRobotoBold = loadFont("../../common/fonts/Roboto-Bold.ttf");
-  lucideIcons.sun = loadImage("assets/icons/sun.svg");
-  lucideIcons.cloudSun = loadImage("assets/icons/cloud-sun.svg");
-  lucideIcons.cloud = loadImage("assets/icons/cloud.svg");
-  lucideIcons.cloudRain = loadImage("assets/icons/cloud-rain.svg");
-  lucideIcons.cloudLightning = loadImage("assets/icons/cloud-lightning.svg");
-  lucideIcons.cloudSnow = loadImage("assets/icons/cloud-snow.svg");
-  lucideIcons.cloudFog = loadImage("assets/icons/cloud-fog.svg");
-  lucideIcons.moon = loadImage("assets/icons/moon.svg");
+  // Use absolute paths so icons load correctly from both standalone and hub servers
+  fontRobotoRegular = loadFont("/common/fonts/Roboto-Regular.ttf");
+  fontRobotoBold = loadFont("/common/fonts/Roboto-Bold.ttf");
+  lucideIcons.sun = loadImage("/modules/weather/assets/icons/sun.svg");
+  lucideIcons.cloudSun = loadImage("/modules/weather/assets/icons/cloud-sun.svg");
+  lucideIcons.cloud = loadImage("/modules/weather/assets/icons/cloud.svg");
+  lucideIcons.cloudRain = loadImage("/modules/weather/assets/icons/cloud-rain.svg");
+  lucideIcons.cloudLightning = loadImage("/modules/weather/assets/icons/cloud-lightning.svg");
+  lucideIcons.cloudSnow = loadImage("/modules/weather/assets/icons/cloud-snow.svg");
+  lucideIcons.cloudFog = loadImage("/modules/weather/assets/icons/cloud-fog.svg");
+  lucideIcons.moon = loadImage("/modules/weather/assets/icons/moon.svg");
 }
 
 function useFont(isBold = true) {
@@ -508,7 +509,25 @@ function drawWeatherIcon(cx, cy, size, weatherCode, palette, isDay = 1) {
   }
 
   if (iconImg) {
+    // Determine if background is dark to decide if we need to invert the icon
+    // Icons are black strokes on transparent — they are visible on light backgrounds.
+    // On dark backgrounds, apply a white tint to make strokes visible.
+    const bgColor = palette[BACKGROUND_COLOR_INDEX % palette.length];
+    const bgR = parseInt(bgColor.slice(1, 3), 16);
+    const bgG = parseInt(bgColor.slice(3, 5), 16);
+    const bgB = parseInt(bgColor.slice(5, 7), 16);
+    const bgLum = 0.299 * bgR + 0.587 * bgG + 0.114 * bgB;
+    if (bgLum < 128) {
+      // Dark bg: tint icon white so black strokes read as white on dark background
+      // Draw a white rect behind the icon, then blend
+      blendMode(SCREEN);
+      tint(255, 255, 255, 220);
+    } else {
+      tint(255); // no tint on light background
+    }
     image(iconImg, 0, 0, size, size);
+    noTint();
+    blendMode(BLEND);
   }
   pop();
 }

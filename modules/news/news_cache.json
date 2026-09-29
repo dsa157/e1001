@@ -1,193 +1,196 @@
 {
-  "lastQueryTime": 1790691369345,
+  "lastQueryTime": 1790693820838,
   "hourlyTimestamps": [
-    1790690195272,
-    1790690195276,
     1790690558813,
     1790690558835,
     1790691369335,
-    1790691369345
+    1790691369345,
+    1790691738798,
+    1790692259097,
+    1790692708935,
+    1790693130802,
+    1790693820838
   ],
   "data": [
     {
-      "id": "10cc27ec-ff20-53cf-9696-e860a2ed7523",
-      "title": "Frontiers | A deep learning-based silhouette gait detection framework for fall risk classification in Parkinson’s disease",
-      "description": "BackgroundParkinson’s disease (PD) is a rapidly growing neurodegenerative disorder associated with gait impairment, functional decline, and increased fall ri...",
-      "author": "Chu; Slo-Li; Kuo; Chia-Ju; Chiu; Wang; Chiaching; Wu; Shey-Lin; Lin; Ping-Yi",
-      "category": "ACADEMIA",
-      "published": "2026-09-29 14:13:53 +0000",
-      "url": "https://www.frontiersin.org/journals/neurology/articles/10.3389/fneur.2026.1944666/full"
+      "id": "83418d8c-e8f8-54e3-9890-6f8d80c2e1f9",
+      "title": "4 rights defenders jailed before NATO summit in Ankara released after 3 months - Turkish Minute",
+      "description": "A Turkish court on Tuesday ordered the release of four members of the Human Rights Association (İHD) who had been held in pretrial detention for more than three months after being arrested in a mass security operation ahead of NATO’s July summit in Ankara. Tuğba Kahraman, Hale Nur Çetin, Mert Ahmet ...",
+      "author": "Turkish Minute",
+      "category": "NATIONAL",
+      "published": "2026-09-29 14:55:24 +0000",
+      "url": "https://www.turkishminute.com/?p=187158"
     },
     {
-      "id": "33875648-9855-54c3-96d2-f087d560d04c",
-      "title": "Frontiers | Dual-informant clinical outcome assessment in the inclusive orchestra: measurement architecture for neurodevelopmental disorders prior to empirical evaluation",
-      "description": "BackgroundSystematic behavioral observation in a group requires the rater to know when a target behavior could have occurred. In an inclusive orchestra the n...",
-      "author": "Liuzzi; Tommaso; D’Arienzo; Fiammetta; Staccioli; Susanna; Bompard; Sarah; Frascari Diotallevi; Martina; Giuliani; Roberto; Lettori; Donatella; Castelli; Enrico",
-      "category": "ACADEMIA",
-      "published": "2026-09-29 14:13:52 +0000",
-      "url": "https://www.frontiersin.org/journals/neurology/articles/10.3389/fneur.2026.1834441/full"
-    },
-    {
-      "id": "e1ef846f-9825-5edd-b823-3404a5b3c504",
-      "title": "How to Find Questions Left Unanswered in a Meeting Recording in 2026",
-      "description": "Use local AI to review a meeting transcript for open questions, then check the recording before preparing focused follow-ups.",
-      "author": "Mohammed Ali Chherawalla",
-      "category": "PROGRAMMING",
-      "published": "2026-09-29 14:13:13 +0000",
-      "url": "https://dev.to/alichherawalla/how-to-find-questions-left-unanswered-in-a-meeting-recording-in-2026-666"
-    },
-    {
-      "id": "21a9c6f9-24ae-56ed-bc44-3a5c9a701a5d",
-      "title": "My headless AI server setup stopped dying when I got boring about queues and 30-second watchdogs",
-      "description": "A practical DEV post on making headless AI agent infrastructure actually reliable: split ingress from execution, design replay-safe jobs, detect hung",
-      "author": "Lars Winstand",
-      "category": "PROGRAMMING",
-      "published": "2026-09-29 14:13:11 +0000",
-      "url": "https://dev.to/lars_winstand/my-headless-ai-server-setup-stopped-dying-when-i-got-boring-about-queues-and-30-second-watchdogs-3im5"
-    },
-    {
-      "id": "1ece476d-10e8-54ba-8c6e-0cd4224326bc",
-      "title": "I made Hindsight Memory Survive a New Interaction",
-      "description": "I Let the Current Issue Shape Hindsight Recall Persistent memory is useful only when it is relevant...",
-      "author": "Sahasra",
-      "category": "PROGRAMMING",
-      "published": "2026-09-29 14:13:09 +0000",
-      "url": "https://dev.to/sahasra/i-made-hindsight-memory-survive-a-new-interaction-3p6c"
-    },
-    {
-      "id": "16cb0b91-3eb8-57c5-808e-cc405bf810de",
-      "title": "Triton Stone Group Celebrates 20 years of Service",
-      "description": "MOBILE, Ala. (WKRG) — Triton Stone Group started in 2006 and began as a way to help rebuild New Orleans after Hurricane Katrina.  Katie Jensen, co-founder of Triton Stone Group, joined WKRG News 5’s Take 5 to share the mission of Triton Stone Group and what drives the company today.",
-      "author": "Keylee Fillingim",
-      "category": "REGIONAL",
-      "published": "2026-09-29 14:12:58 +0000",
-      "url": "https://www.wkrg.com/take-5/triton-stone-group-celebrates-20-years-of-service/"
-    },
-    {
-      "id": "a1cf68a8-107e-5f58-9e6f-38a25ccd22dd",
-      "title": "Frontiers | Therapeutic potential of oncolytic viruses in hematopoietic malignancies: from preclinical insights to clinical realities",
-      "description": "While certain forms of lymphoma—such as classical Hodgkin lymphoma—are classified as curable, with over half of all patients achieving remission following fi...",
-      "author": "Erkens; Sebastian; Ghebrehiwot; Dawit Belai; Knierer; Julius; Wang; Xiaofang; Ehrhardt; Anja; Zhang; Wenli",
-      "category": "ACADEMIA",
-      "published": "2026-09-29 14:12:45 +0000",
-      "url": "https://www.frontiersin.org/journals/microbiology/articles/10.3389/fmicb.2026.1925346/full"
-    },
-    {
-      "id": "2f4e1954-c075-54eb-9bfb-4b72dcbb4a13",
-      "title": "SupportMind: Building an AI Customer Support Agent with Memory",
-      "description": "🚀 SupportMind: An AI Customer Support Agent with Memory For HackHyderabad 3.0, I built SupportMind,...",
-      "author": "Bhavyasri Routhu",
-      "category": "PROGRAMMING",
-      "published": "2026-09-29 14:12:37 +0000",
-      "url": "https://dev.to/bhavyasri_routhu_26455e3c/supportmind-building-an-ai-customer-support-agent-with-memory-1pgp"
-    },
-    {
-      "id": "5d0d4b61-6a4c-5489-a5b6-70888f779b6a",
-      "title": "Frontiers | Association between single euploid embryo transfer and pregnancy outcomes in women of advanced maternal age: a propensity score-matched analysis",
-      "description": "ObjectiveTo explore the correlation between preimplantation genetic testing for aneuploidy (PGT-A) and pregnancy, miscarriage, and live birth outcomes among ...",
-      "author": "Qin; Bojin; Lin; Xiaolong; Yang; Zengyu; Chun; Wang; Liyan; Liu; Xiaofei; Zhong; Junjie; Lan; Zhang; Juguang; Wei; Su'e; Zhu; Li; Xiang",
-      "category": "ACADEMIA",
-      "published": "2026-09-29 14:12:34 +0000",
-      "url": "https://www.frontiersin.org/journals/endocrinology/articles/10.3389/fendo.2026.1921930/full"
-    },
-    {
-      "id": "d1d64de5-9a1c-57c1-84f0-57fb700b493e",
-      "title": "'If You Know...': Tukaram Mundhe Responds To Sanjay Raut’s FDA Bribery Claims, Says Infant Nutrition Next Target",
-      "description": "FDA Seizes Rs 1.26-Crore Gutkha, Next Target Is Infant Nutrition: Mundhe said Raut's allegations should be supported by specific information so that action can be taken",
-      "author": "Manjiri Joshi; Ananya Gupta",
+      "id": "a2d6d64e-a4f6-56db-b4fb-f2feea2998b9",
+      "title": "Belarus approves heraldic symbols of Ministry of Energy",
+      "description": "Belarusian President Aleksandr Lukashenko signed a decree establishing new official heraldic symbols of the Belarusian Ministry of Energy.",
+      "author": "World News",
       "category": "GENERAL",
-      "published": "2026-09-29 14:12:34 +0000",
-      "url": "https://www.news18.com/india/tukaram-mundhe-says-next-target-is-infant-nutrition-responds-to-sanjay-rauts-bribery-allegation-as-fda-seizes-rs-1-26-crore-gutkha-ws-klrt-10359742.html"
+      "published": "2026-09-29 14:53:55 +0000",
+      "url": "https://eng.belta.by/president/view/belarus-approves-heraldic-symbols-of-ministry-of-energy-186728-2026"
     },
     {
-      "id": "d59481af-e4a9-5eef-89d3-d868fa2d9793",
-      "title": "Canada's economic growth unchanged in July, August likely to expand 0.2% - The Korea Times",
-      "description": "OTTAWA — Canada's economic growth was flat in July, data showed on Tuesday, in line with expectations and signaling a slower start to the third qua...",
-      "author": "Reuters",
-      "category": "REGIONAL",
-      "published": "2026-09-29 14:12:03 +0000",
-      "url": "https://www.koreatimes.co.kr/world/20260929/canadas-economic-growth-unchanged-in-july-august-likely-to-expand-02"
+      "id": "419b19d7-1b38-5c3c-b871-28193f51a0f3",
+      "title": "Frontiers | Geometry-informed temperature band screening for crop microclimate management in a commercial tomato greenhouse",
+      "description": "Commercial greenhouses require temperature strategies that coordinate natural ventilation and screens with supplementary heating while maintaining a suitable...",
+      "author": "Liu; Xiaojing; Li; Jianlin; Hongsheng; Shi; Shuhui",
+      "category": "ACADEMIC",
+      "published": "2026-09-29 14:53:21 +0000",
+      "url": "https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2026.1969599/full"
     },
     {
-      "id": "d3f29c81-419c-5336-81d8-f126d8d3a568",
-      "title": "8 in 10 S. Koreans view 2 Koreas as separate states: poll - The Korea Times",
-      "description": "More than 80 percent of South Koreans viewed South and North Korea as separate states, a survey showed Tuesday. According to the poll conducted by...",
+      "id": "c8fe547c-6563-5210-a50b-66c426460aba",
+      "title": "Parents use ChatGPT to dodge pricey school pictures. But should you?",
+      "description": "Some parents are asking AI chatbots to remove the watermark on school photo proofs, which could result in legal ramifications.",
+      "author": "USA TODAY",
+      "category": "WORLD",
+      "published": "2026-09-29 14:53:04 +0000",
+      "url": "https://www.usatoday.com/story/tech/2026/09/28/chatgpt-school-pictures-copyright/91940947007/"
+    },
+    {
+      "id": "c236287b-c6d7-51f1-bddc-040b2f211414",
+      "title": "Revealed: Wladimir Klitschko's 'urgent' fight to protect daughter",
+      "description": "His former fiancée Hayden Panettiere died aged 36 of an accidental drug overdose last month",
+      "author": "Ekin Karasin",
+      "category": "GENERAL",
+      "published": "2026-09-29 14:51:49 +0000",
+      "url": "https://www.standard.co.uk/showbiz/wladimir-klitschko-hayden-panettiere-daughter-b1298847.html"
+    },
+    {
+      "id": "859d5025-ad48-5600-ae53-35d1b95e2dfe",
+      "title": "Naked Capitalism - Helping You Stay Sane in an Increasingly Insane World | naked capitalism",
+      "description": "Double down on that dogged determination to keep the insanity and inhumanity at bay for another year!",
+      "author": "Conor Gallagher",
+      "category": "NEWS",
+      "published": "2026-09-29 14:51:16 +0000",
+      "url": "https://www.nakedcapitalism.com/2026/09/naked-capitalism-helping-you-stay-sane-in-an-increasingly-insane-world.html"
+    },
+    {
+      "id": "107f1903-6f44-5111-9aad-c06a02cd1441",
+      "title": "Marilyn Flynn Obituary (1941 - 2026) - Penn Yan, NY - Finger Lakes Times - Legacy",
+      "description": "PENN YAN - Marilyn Fritz Flynn, 85, died peacefully at home on September 26, 2026. Born in Canandaigua on March 27, 1941 to Homer Elmer Fritz and ...",
       "author": "World News",
       "category": "REGIONAL",
-      "published": "2026-09-29 14:12:03 +0000",
-      "url": "https://www.koreatimes.co.kr/foreignaffairs/northkorea/20260929/8-in-10-s-koreans-view-2-koreas-as-separate-states-poll"
+      "published": "2026-09-29 14:51:08 +0000",
+      "url": "https://obits.oregonlive.com/us/obituaries/fltimes/name/marilyn-flynn-obituary?id=62620530"
     },
     {
-      "id": "648346f0-521f-5751-bd0e-5ce144cfb7b4",
-      "title": "China rolls out new measures to bolster its property sector and economy - The Korea Times",
-      "description": "BEIJING — China on Tuesday rolled out new measures to help boost its economy and sluggish property sector as pressures ramp up ahead of a year-end...",
-      "author": "AP",
+      "id": "d3cd654f-e4f6-5ca9-8d06-cba2070e4bd9",
+      "title": "Yvette Chouinard Obituary (1932 - 2026) - Manchester, NH - Union Leader - Legacy",
+      "description": "MANCHESTER -- Yvette G. Chouinard passed away peacefully at home after a period of declining health. Her care and healthcare was attentively done ...",
+      "author": "World News",
       "category": "REGIONAL",
-      "published": "2026-09-29 14:12:03 +0000",
-      "url": "https://www.koreatimes.co.kr/world/20260929/china-rolls-out-new-measures-to-bolster-its-property-sector-and-economy"
+      "published": "2026-09-29 14:51:08 +0000",
+      "url": "https://obits.oregonlive.com/us/obituaries/unionleader/name/yvette-chouinard-obituary?id=62622445"
     },
     {
-      "id": "e94627dd-0087-50bc-a632-c12048409480",
-      "title": "The MN Stolen Neighbors Quilt",
-      "description": "Over the past six months, dozens of people pitched in to create the MN Stolen Neighbors Quilt, which is made of 12,500 squares, each one representing an immigra",
-      "author": "Jason Kottke",
-      "category": "OPINION",
-      "published": "2026-09-29 14:12:00 +0000",
-      "url": "https://kottke.org/26/09/the-mn-stolen-neighbors-quilt"
-    },
-    {
-      "id": "51bcdd72-2ad4-546a-8301-515b9f7c83a5",
-      "title": "Mom, 29, left 'young children home alone so she could go on CRUISE'",
-      "description": "Nathalie Belizaire, 29, allegedly left her children alone in her home in North Miami Beach on Friday so she could go on a four-day Carnival Conquest cruise to the Bahamas.",
-      "author": "Will Potter",
+      "id": "1574a4a1-a9dd-52b9-acff-762667a8ee10",
+      "title": "Pension triple lock: How does it work and what does Andy Burnham plan to change?",
+      "description": "The Prime Minister has said the triple lock on the the state pension would be adjusted from April 2030 under Labour plans.",
+      "author": "Vicky Shaw",
       "category": "GENERAL",
-      "published": "2026-09-29 14:11:22 +0000",
-      "url": "https://www.dailymail.com/news/article-16169249/Nathalie-Belizaire-cruise-children-abandoned-Miami-Florida.html?ns_campaign=1490&ito=1490"
+      "published": "2026-09-29 14:51:01 +0000",
+      "url": "https://www.standard.co.uk/business/money/andy-burnham-institute-for-fiscal-studies-prime-minister-labour-unite-b1298807.html"
     },
     {
-      "id": "b5e01ccd-2a1d-50b3-87a4-8197b3e55f14",
-      "title": "Best AI-Powered Data Modeling Tools (2026)",
-      "description": "Data modeling used to be the slow, unglamorous part of the analytics stack. You'd sketch an ERD, argue about naming conventions, generate some DDL, and hope the physical schema matched what the business actually wanted. In 2026, that whole workflow has been rewired by AI. Copilots write DDL from pro...",
-      "author": "Naveen",
-      "category": "PROGRAMMING",
-      "published": "2026-09-29 14:11:17 +0000",
-      "url": "https://dev.to/naveensub/best-ai-powered-data-modeling-tools-2026-2hpc"
+      "id": "d0013065-bf2c-5189-adbe-9826f8d00071",
+      "title": "Breathless night that Tom Brady's teammates realized he wasn't gay",
+      "description": "A bombshell new biography by bestselling author Lars Anderson reveals the rumors about Brady's love life and sexuality at college.",
+      "author": "Max Winters",
+      "category": "NATIONAL",
+      "published": "2026-09-29 14:50:23 +0000",
+      "url": "https://www.dailymail.com/sport/nfl/article-16138593/tom-brady-gay-college-secrets.html"
     },
     {
-      "id": "308bc695-3d06-5c62-8799-a3ba36586298",
-      "title": "Leaked images reveal new colors for Amazon’s next entry-level Kindle",
-      "description": "Amazon’s next basic Kindle is getting one very welcome upgrade.",
-      "author": "Andrew Liszewski",
-      "category": "TECHNOLOGY",
-      "published": "2026-09-29 14:10:50 +0000",
-      "url": "https://www.theverge.com/tech/1001905/amazon-leak-basic-entry-level-kindle-colors-design-power-button"
+      "id": "b7915b67-adc7-5ed0-9eff-d37f4389e14d",
+      "title": "Americans' view of the economy sinks to the lowest level since 2014, Conference Board survey says",
+      "description": "WASHINGTON (AP) — Americans’ confidence in the economy sank to the lowest level in more than a decade this month as prices remain elevated and wages stagnate amid the ongoing Iran war.\n            The Conference Board said Tuesday that its consumer confidence index tumbled 6.7 points to 81.9 in Sept...",
+      "author": "MATT OTT, AP Business Writer",
+      "category": "NATIONAL",
+      "published": "2026-09-29 14:49:54 +0000",
+      "url": "https://www.timesunion.com/business/article/americans-growing-more-pessimistic-about-the-22454357.php"
     },
     {
-      "id": "1e7f052e-e3f0-52a9-b416-250c4e7a6a90",
-      "title": "How to Find Gaps in a Project Handover With Local AI in 2026",
-      "description": "Review a project handover for missing owners, unclear decisions, stale documents, and blocked next steps with AI running on your computer.",
-      "author": "Mohammed Ali Chherawalla",
-      "category": "PROGRAMMING",
-      "published": "2026-09-29 14:10:30 +0000",
-      "url": "https://dev.to/alichherawalla/how-to-find-gaps-in-a-project-handover-with-local-ai-in-2026-2gi5"
+      "id": "8ca23d04-8771-52d4-b93f-878bf092361e",
+      "title": "Americans' view of the economy sinks to the lowest level since 2014, Conference Board survey says",
+      "description": "Americans’ confidence in the economy sank to the lowest level in more than a decade this month as prices remain elevated and wages stagnate amid the ongoing Iran war. The Conference Board said Tuesday that its consumer confidence index tumbled 6.7 points to 81.9 in September, down from 88.6 in Augus...",
+      "author": "MATT OTT, AP Business Writer",
+      "category": "REGIONAL",
+      "published": "2026-09-29 14:49:54 +0000",
+      "url": "https://www.sfgate.com/business/article/americans-growing-more-pessimistic-about-the-22454357.php"
     },
     {
-      "id": "76d7481f-094d-5ff3-a43c-507a75564ba4",
-      "title": "Spanish government unveils new measures aimed at easing housing crisis",
-      "description": "The government has been facing growing pressure from a housing protest movement amid high costs and public outcry over the eviction of an 87-year-old woman. #EuropeNews",
-      "author": "Christina Thykjaer; Javier Iniguez De Onzono",
-      "category": "POLITICS",
-      "published": "2026-09-29 14:10:29 +0000",
-      "url": "https://www.euronews.com/2026/09/29/spanish-government-unveils-new-measures-aimed-at-easing-housing-crisis"
-    },
-    {
-      "id": "20e2f0fc-bf21-595b-8dc4-e1f7dad41fcd",
-      "title": "Guinea-Bissau vs Nigeria: AFCON 2027 qualifier - LIVE",
-      "description": "Super Eagles aiming to build on win over Madagascar as qualification for the 2027 Africa Cup of Nations continues",
-      "author": "Tashan Deniran-Alleyne",
+      "id": "445eb5fe-6a98-578d-9c12-ffb77cfc5881",
+      "title": "Dodgy London landlords ripping off tenants to have homes seized, says Burnham",
+      "description": "Councils will be given the power to take over poor quality flats and houses if they are not upgraded, Prime Minister announces",
+      "author": "Rachael Burford",
       "category": "GENERAL",
-      "published": "2026-09-29 14:10:13 +0000",
-      "url": "https://www.standard.co.uk/sport/football/guinea-bissau-vs-nigeria-live-stream-latest-score-updates-result-b1298848.html"
+      "published": "2026-09-29 14:49:39 +0000",
+      "url": "https://www.standard.co.uk/news/politics/landlords-tenants-homes-seized-andy-burnham-b1298858.html"
+    },
+    {
+      "id": "c63bc55c-5f31-5549-9b16-6ed76ece70c3",
+      "title": "Two men, two scanners and hundreds of  thousands of stickers: How Minnesota's biggest candy shop stays old school",
+      "description": "Packed inside the shop are more pieces of candy than anyone at the store has even counted. They estimate it's hundreds of thousands of sweet treats.",
+      "author": "World News",
+      "category": "GENERAL",
+      "published": "2026-09-29 14:49:07 +0000",
+      "url": "https://www.wltx.com/article/news/nation-world/how-minnesotas-biggest-candy-shop-stays-old-school/507-acde5282-7baa-492f-b7c1-41d4ab4f002c"
+    },
+    {
+      "id": "d0303b24-bf20-5958-b58e-edb3351d58c7",
+      "title": "Dutch police arrest a suspected ShinyHunters member; court orders 90-day detention",
+      "description": "Dutch police have arrested a suspected member of the ShinyHunters hacker group, linked to major data breaches. The 24-year-old man from Amsterdam was arrested on September 15. ShinyHunters recently claimed to have breached the FBI’s jobs website. FBI Director Kash Patel highlighted the arrest on soc...",
+      "author": "MIKE CORDER, Associated Press",
+      "category": "REGIONAL",
+      "published": "2026-09-29 14:48:33 +0000",
+      "url": "https://www.sfgate.com/news/world/article/dutch-police-arrest-a-suspected-shinyhunters-22454400.php"
+    },
+    {
+      "id": "fc8795c0-97d1-510f-a520-ce30857fbed2",
+      "title": "ProHance launches 'industry first' governance platform",
+      "description": "The platform will give enterprises actionable insights on future conditions that could impact their company",
+      "author": "Emily Jordan",
+      "category": "NATIONAL",
+      "published": "2026-09-29 14:48:01 +0000",
+      "url": "https://www.edinburghnews.scotsman.com/must-read/prohance-launches-governance-platform-9222274"
+    },
+    {
+      "id": "7cf24ece-b2a0-5588-8f79-bd6f19ba5986",
+      "title": "Links 9/29/2026 + Short Iran War Note | naked capitalism",
+      "description": "Our purple daily links: Obsession virtues? salt syndicate, bond market recovery, US droughts, EU LNG desperation, China transport overcapacity, Al Aqsa mosque stormed, Haiti + Colombia gangs, Ukraine grain squeeze, Trump v. mail in ballots, NYC taxi drivers working to death, moar EU NATO freakout",
+      "author": "Yves Smith",
+      "category": "NEWS",
+      "published": "2026-09-29 14:47:47 +0000",
+      "url": "https://www.nakedcapitalism.com/2026/09/links-9-29-2026-short-iran-note.html"
+    },
+    {
+      "id": "bfed5dce-ee4c-5dac-bcaf-f837503e2212",
+      "title": "Glasgow v Ulster: Irish province without trio of backs for United Rugby Championship game",
+      "description": "Ulster will be without injured backs Michael Lowry, Robert Baloucoune and Aitzol Arenzana-King for their United Rugby Championship game away to Glasgow on Saturday.",
+      "author": "World News",
+      "category": "SPORTS",
+      "published": "2026-09-29 14:47:37 +0000",
+      "url": "https://www.bbc.co.uk/sport/rugby-union/articles/c68048k1mnd3o"
+    },
+    {
+      "id": "7606f2de-57d4-538e-ab11-2900c166f43e",
+      "title": "India seeks China’s Xinjiang air route to tackle Pakistan airspace ban: Ram Mohan Naidu",
+      "description": "India is discussing an alternative air corridor over Hotan in China’s Xinjiang region to reduce flight time and operating costs caused by Pakistan’s continued airspace closure.",
+      "author": "Manisha Chauhan",
+      "category": "GENERAL",
+      "published": "2026-09-29 14:47:32 +0000",
+      "url": "https://www.dnaindia.com/world/report-india-seeks-china-s-xinjiang-air-route-to-tackle-pakistan-airspace-ban-ram-mohan-naidu-3221424"
+    },
+    {
+      "id": "f464d40f-8292-599b-a5e5-6ceb732b9c9a",
+      "title": "2 aviators eject, 4 injured during landing mishap aboard USS Dwight D. Eisenhower",
+      "description": "Two pilots ejected, and 4 shipboard personnel were injured during an aircraft landing aboard the USS Dwight D. Eisenhower on Monday.",
+      "author": "Riley Ceder",
+      "category": "MILITARY",
+      "published": "2026-09-29 14:47:26 +0000",
+      "url": "https://www.militarytimes.com/news/your-navy/2026/09/29/2-aviators-eject-4-injured-during-landing-mishap-aboard-uss-dwight-d-eisenhower/"
     }
   ]
 }

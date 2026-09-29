@@ -10,7 +10,7 @@ substitutions:
   name: "seeed-e1001-hub-client"
   friendly_name: "Seeed E1001 Hub Client"
   # Current local LAN IP
-  hub_host: "192.168.1.93"
+  hub_host: "192.168.1.206"
   hub_port: "8000"
 
 esphome:

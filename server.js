@@ -1,10 +1,13 @@
 /**
  * ============================================================================
  * Seeed reTerminal E1001 - Master Dashboard Hub & Image Stream Server
- * Version: 2026.09.29.17.28.00
+ * Version: 2026.09.29.21.49.00
  * Description: Orchestrates multi-module display cycling, serves live 800x480
  *              1-bit / grayscale image stream (/api/screen.png) to Seeed E1001,
  *              and provides a web dashboard with real-time controls.
+ *              GPIO3 (action) toggles palette between index 1 and 2.
+ *              Screen PNG is cached per-module; re-renders only on module switch.
+ *              Qlocktwo also re-renders at top of every minute.
  * ============================================================================
  */
 
@@ -48,6 +51,7 @@ function loadEnv() {
           val = val.slice(1, -1);
         }
         env[key] = val;
+        process.env[key] = val;
       }
     }
   }
@@ -99,6 +103,24 @@ let dwellRemaining = 30;
 let isCyclePaused = false;
 let moduleActionStates = {}; // Per-module state (e.g. art style, unit toggles)
 
+// Render Cache: holds the last rendered PNG buffer per module.
+// Re-rendered only when: module changes, palette changes, or (qlocktwo) minute ticks.
+let renderCache = {
+  moduleId: null,       // Module ID of the cached render
+  paletteIndex: null,   // Palette index at time of cache
+  buffer: null,         // Cached 1-bit PNG buffer (post-dither)
+  renderedAt: 0         // Timestamp of last render
+};
+
+/**
+ * Invalidate the render cache, forcing a fresh render on the next /api/screen.png request.
+ */
+function invalidateRenderCache(reason) {
+  renderCache.buffer = null;
+  renderCache.moduleId = null;
+  if (reason) console.log(`[MasterHub] Render cache invalidated: ${reason}`);
+}
+
 function getEnabledModules() {
   return hubConfig.modules.filter(m => m.enabled !== false);
 }
@@ -124,14 +146,30 @@ setInterval(() => {
 
   dwellRemaining -= 1;
   if (dwellRemaining <= 0) {
+    const prevIndex = activeModuleIndex;
     activeModuleIndex = (activeModuleIndex + 1) % enabled.length;
     resetDwellForActiveModule();
     console.log(`[MasterHub] Auto-cycled to module: ${enabled[activeModuleIndex].id} (Dwell: ${dwellRemaining}s)`);
+    if (prevIndex !== activeModuleIndex) {
+      invalidateRenderCache(`module switch -> ${enabled[activeModuleIndex].id}`);
+    }
+  }
+}, TIMER_TICK_MS);
+
+// Qlocktwo top-of-minute refresh: invalidate cache at :00s so next poll gets fresh time
+setInterval(() => {
+  const current = getActiveModule();
+  if (current && current.id === 'qlocktwo') {
+    const now = new Date();
+    if (now.getSeconds() === 0) {
+      invalidateRenderCache('qlocktwo top-of-minute');
+    }
   }
 }, TIMER_TICK_MS);
 
 // Initialize dwell for first module
 resetDwellForActiveModule();
+invalidateRenderCache('server start');
 
 // --- EXPRESS SERVER ---
 const app = express();
@@ -180,13 +218,36 @@ app.get('/api/status', (req, res) => {
 });
 
 /**
- * GET /api/screen.png - Render and stream the active 800x480 PNG
+ * GET /api/screen.png - Serve cached or freshly rendered 800x480 PNG.
+ * Re-renders only when the active module changes.
+ * Qlocktwo additionally re-renders at the top of every minute.
+ * Pass ?force=1 to bypass the cache (e.g. for browser preview).
  */
 app.get('/api/screen.png', async (req, res) => {
   try {
     const current = getActiveModule();
     const moduleId = current ? current.id : 'weather';
     const paletteIndex = hubConfig.settings.active_palette_index !== undefined ? hubConfig.settings.active_palette_index : 0;
+    const forceRefresh = req.query.force === '1' || req.query.raw === '1';
+
+    // Serve cached buffer if still valid (same module & palette, not forced)
+    if (
+      !forceRefresh &&
+      renderCache.buffer &&
+      renderCache.moduleId === moduleId &&
+      renderCache.paletteIndex === paletteIndex
+    ) {
+      const buf = req.query.raw === '1' ? renderCache.rawBuffer || renderCache.buffer : renderCache.buffer;
+      res.writeHead(200, {
+        'Content-Type': 'image/png',
+        'Content-Length': buf.length,
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'X-Render-Cache': 'HIT'
+      });
+      res.end(buf);
+      return;
+    }
+
     const seed = hubConfig.settings.global_seed || 1001;
     const weatherUnits = (hubConfig.settings.weather_units || env.WEATHER_UNITS || 'C').toUpperCase();
     const timeFormat = parseInt(hubConfig.settings.time_format || env.TIME_FORMAT || 12, 10);
@@ -212,10 +273,12 @@ app.get('/api/screen.png', async (req, res) => {
       });
     } else if (moduleId === 'crypto') {
       buffer = await renderCrypto({
+        apiKey: env.COINMARKETCAP_API_KEY || process.env.COINMARKETCAP_API_KEY,
+        symbols: env.CRYPTO_SYMBOLS || 'BTC,ETH,SOL,ADA,BNB,XRP',
         paletteIndex,
         use24h: default24h
       });
-        } else if (moduleId === 'art-241018a') {
+    } else if (moduleId === 'art-241018a') {
       const state = moduleActionStates['art-241018a'] || {};
       buffer = await renderArt241018a({
         seed: state.seed || seed,
@@ -254,15 +317,29 @@ app.get('/api/screen.png', async (req, res) => {
       buffer = await renderWeather({ paletteIndex, useFahrenheit: defaultFahrenheit, use24h: default24h });
     }
 
+    // Store raw buffer before dithering (for ?raw=1 requests)
+    const rawBuffer = buffer;
+
     // Convert to compact 1-bit dithered PNG for e-ink and fast HTTP transfer (<10KB)
     if (req.query.raw !== '1') {
       buffer = await to1BitPng(buffer);
     }
 
+    // Update render cache (store both raw and dithered)
+    renderCache = {
+      moduleId,
+      paletteIndex,
+      buffer,
+      rawBuffer,
+      renderedAt: Date.now()
+    };
+    console.log(`[MasterHub] Rendered: ${moduleId} (palette ${paletteIndex}, ${buffer.length} bytes)`);
+
     res.writeHead(200, {
       'Content-Type': 'image/png',
       'Content-Length': buffer.length,
-      'Cache-Control': 'no-store, no-cache, must-revalidate'
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      'X-Render-Cache': 'MISS'
     });
     res.end(buffer);
   } catch (err) {
@@ -279,6 +356,7 @@ app.all('/api/next', (req, res) => {
   if (enabled.length >= 2) {
     activeModuleIndex = (activeModuleIndex + 1) % enabled.length;
     resetDwellForActiveModule();
+    invalidateRenderCache(`next button -> ${enabled[activeModuleIndex].id}`);
     console.log(`[MasterHub] Next module pressed -> Switched to: ${enabled[activeModuleIndex].id}`);
     res.json({ success: true, activeModule: enabled[activeModuleIndex], dwellRemaining });
   } else if (enabled.length === 1) {
@@ -291,6 +369,7 @@ app.all('/api/next', (req, res) => {
       moduleActionStates['art1-test'] = moduleActionStates['art1-test'] || {};
       moduleActionStates['art1-test'].styleIndex = ((moduleActionStates['art1-test'].styleIndex || 0) + 1) % 3;
     }
+    invalidateRenderCache('next single-module action');
     res.json({ success: true, message: `Action triggered for single module: ${current.id}` });
   } else {
     res.json({ success: false, message: 'No modules enabled' });
@@ -305,6 +384,7 @@ app.all('/api/prev', (req, res) => {
   if (enabled.length >= 2) {
     activeModuleIndex = (activeModuleIndex - 1 + enabled.length) % enabled.length;
     resetDwellForActiveModule();
+    invalidateRenderCache(`prev button -> ${enabled[activeModuleIndex].id}`);
     console.log(`[MasterHub] Prev module pressed -> Switched to: ${enabled[activeModuleIndex].id}`);
     res.json({ success: true, activeModule: enabled[activeModuleIndex], dwellRemaining });
   } else if (enabled.length === 1) {
@@ -316,6 +396,7 @@ app.all('/api/prev', (req, res) => {
     } else if (current.id === 'art-241018a' || current.id === 'art1-test') {
       hubConfig.settings.active_palette_index = (hubConfig.settings.active_palette_index + 1) % 5;
     }
+    invalidateRenderCache('prev single-module action');
     res.json({ success: true, message: `Action triggered for single module: ${current.id}` });
   } else {
     res.json({ success: false, message: 'No modules enabled' });
@@ -324,25 +405,15 @@ app.all('/api/prev', (req, res) => {
 
 /**
  * GET /api/action - Action Button Handler (GPIO3)
+ * Toggles active palette between index 1 and 2
  */
 app.all('/api/action', (req, res) => {
-  const enabled = getEnabledModules();
-  if (enabled.length >= 2) {
-    // In multi-module mode: Short press toggles Pause/Resume of cycling
-    isCyclePaused = !isCyclePaused;
-    console.log(`[MasterHub] Action pressed -> Cycle paused: ${isCyclePaused}`);
-    res.json({ success: true, isCyclePaused });
-  } else if (enabled.length === 1) {
-    // In single-module mode: Triggers native module refresh/seed action
-    const current = enabled[0];
-    if (current.id === 'art1-test') {
-      moduleActionStates['art1-test'] = moduleActionStates['art1-test'] || {};
-      moduleActionStates['art1-test'].seed = Math.floor(Math.random() * 100000) + 1;
-    }
-    res.json({ success: true, message: `Refreshed single module: ${current.id}` });
-  } else {
-    res.json({ success: false, message: 'No modules enabled' });
-  }
+  // Toggle palette between 1 and 2 regardless of module count
+  const currentPalette = hubConfig.settings.active_palette_index || 0;
+  hubConfig.settings.active_palette_index = (currentPalette === 1) ? 2 : 1;
+  invalidateRenderCache(`action (GPIO3) palette -> ${hubConfig.settings.active_palette_index}`);
+  console.log(`[MasterHub] Action (GPIO3) pressed -> Palette toggled to: ${hubConfig.settings.active_palette_index}`);
+  res.json({ success: true, active_palette_index: hubConfig.settings.active_palette_index });
 });
 
 /**
@@ -355,6 +426,7 @@ app.post('/api/select', (req, res) => {
   if (idx !== -1) {
     activeModuleIndex = idx;
     resetDwellForActiveModule();
+    invalidateRenderCache(`select -> ${enabled[activeModuleIndex].id}`);
     res.json({ success: true, activeModule: enabled[activeModuleIndex] });
   } else {
     res.status(404).json({ success: false, message: 'Module not found or not enabled' });
@@ -372,6 +444,7 @@ app.post('/api/toggle-module', (req, res) => {
     fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(hubConfig, null, 2));
     activeModuleIndex = 0;
     resetDwellForActiveModule();
+    invalidateRenderCache(`toggle-module ${id} -> ${enabled}`);
     res.json({ success: true, modules: hubConfig.modules });
   } else {
     res.status(404).json({ success: false, message: 'Module not found' });

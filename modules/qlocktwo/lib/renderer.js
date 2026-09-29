@@ -1,11 +1,12 @@
 /**
  * QLOCKTWO E1001 E-Ink Canvas Renderer
- * Version: 2026.09.28.16.46.00
+ * Version: 2026.09.29.21.40.00
  *
  * Renders the QLOCKTWO matrix and corner minute indicators onto an 800x480 (or custom)
  * canvas for the reTerminal E1001 E-Ink frame. Features seedable noise/dither texture,
  * 5 curated Adobe Kuler all-grayscale e-ink palettes with uniform 28px typography,
  * illuminated-only corner minute dots, and centered layout without footer.
+ * Lit cells use font-weight 700 (bold), unlit cells use font-weight 500 (medium).
  */
 
 const { createCanvas } = require('@napi-rs/canvas');
@@ -26,6 +27,8 @@ const GRID_ROWS = 10; // default: 10 (Standard QlockTwo rows)
 const GRID_WIDTH = 520; // default: 520 (Matrix display width in pixels)
 const GRID_HEIGHT = 420; // default: 420 (Matrix display height in pixels)
 const FONT_SIZE = 28; // default: 28 (Font size for both lit and unlit matrix letters)
+const FONT_WEIGHT_LIT = 700; // default: 700 (Bold weight for lit/active letters, matching CSS .matrix-cell.lit)
+const FONT_WEIGHT_UNLIT = 500; // default: 500 (Medium weight for unlit/inactive letters, matching CSS .matrix-cell)
 const FONT_FAMILY = 'Helvetica, -apple-system, sans-serif'; // default: 'Helvetica, -apple-system, sans-serif'
 const CORNER_DOT_RADIUS = 6; // default: 6 (Radius of corner minute dots)
 const CORNER_DOT_OFFSET = 24; // default: 24 (Distance from frame edge for corner dots)
@@ -127,8 +130,7 @@ function renderToBuffer(qlockState, options = {}) {
     }
   });
 
-  // Render Grid Characters: Same 28px font size for both lit & unlit
-  ctx.font = `600 ${FONT_SIZE}px ${FONT_FAMILY}`;
+  // Render Grid Characters: Different font weight for lit vs unlit
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
@@ -138,9 +140,11 @@ function renderToBuffer(qlockState, options = {}) {
       const cy = startY + (cell.row * cellH) + (cellH / 2);
 
       if (cell.isLit) {
+        ctx.font = `${FONT_WEIGHT_LIT} ${FONT_SIZE}px ${FONT_FAMILY}`;
         ctx.fillStyle = litTextColor;
         ctx.fillText(cell.char, cx, cy);
       } else {
+        ctx.font = `${FONT_WEIGHT_UNLIT} ${FONT_SIZE}px ${FONT_FAMILY}`;
         ctx.fillStyle = unlitTextColor;
         ctx.fillText(cell.char, cx, cy);
       }

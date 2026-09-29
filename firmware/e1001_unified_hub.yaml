@@ -1,9 +1,12 @@
 # ============================================================================
 # Seeed reTerminal E1001 - Unified Native ESPHome Multi-Module Dashboard
-# Version: 2026.09.29.19.15.00
+# Version: 2026.09.29.21.51.00
 # Description: 100% Autonomous, on-device multi-module dashboard for Seeed E1001
 #              (ESP32-S3 + Waveshare 7.50in V2 800x480 e-paper display).
 #              Runs 100% standalone without any computer or host server.
+#              Display refreshes ONLY on: boot, module switch, or qlocktwo
+#              top-of-minute. All data fetches (weather, crypto) update
+#              silently in background without triggering a display refresh.
 #
 # Integrated Modules:
 #   Module 0: Live Open-Meteo Weather Dashboard (5-Day Outlook + SVG Icons)
@@ -300,11 +303,7 @@ script:
                     }
                     return true;
                   });
-              - if:
-                  condition:
-                    lambda: 'return id(active_module_index) == 0;'
-                  then:
-                    - component.update: eink_display
+              # Data updated silently in background — display only refreshes on next module switch
 
   # Fetch Crypto Quotes from CoinMarketCap (up to 6 coins with 8KB response buffer)
   - id: fetch_crypto_script
@@ -356,11 +355,7 @@ script:
                     }
                     return true;
                   });
-              - if:
-                  condition:
-                    lambda: 'return id(active_module_index) == 1;'
-                  then:
-                    - component.update: eink_display
+              # Data updated silently in background — display only refreshes on next module switch
 
 # ============================================================================
 # HARDWARE PINS & BUSES
@@ -404,22 +399,22 @@ time:
         - delay: 500ms
         - component.update: eink_display
     on_time:
-      # Top of the minute clock refresh (:00s)
+      # Top of every minute: refresh display ONLY if QLOCKTWO is active (module 3)
+      # This keeps the word clock accurate regardless of auto-cycle state
       - seconds: 0
         then:
           - lambda: |-
-              // If auto-cycle is paused and showing QLOCKTWO word clock (Module 3), keep time accurate
-              if (!id(auto_cycle_enabled) && id(active_module_index) == 3) {
+              if (id(active_module_index) == 3) {
                 id(eink_display).update();
               }
-      # Periodic weather refresh every 15 minutes
+      # Periodic weather data refresh every 15 minutes (silent background update)
       - minutes: "/15"
         seconds: 10
         then:
           - script.execute:
               id: fetch_weather_script
               weather_url: "http://api.open-meteo.com/v1/forecast?latitude=${default_lat}&longitude=${default_lon}&current=temperature_2m,relative_humidity_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto"
-      # Periodic crypto refresh every 5 minutes
+      # Periodic crypto data refresh every 5 minutes (silent background update)
       - minutes: "/5"
         seconds: 25
         then:
