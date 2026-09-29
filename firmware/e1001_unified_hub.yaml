@@ -1,6 +1,6 @@
 # ============================================================================
 # Seeed reTerminal E1001 - Unified Native ESPHome Multi-Module Dashboard
-# Version: 2026.09.29.17.28.00
+# Version: 2026.09.29.19.03.00
 # Description: 100% Autonomous, on-device multi-module dashboard for Seeed E1001
 #              (ESP32-S3 + Waveshare 7.50in V2 800x480 e-paper display).
 #              Runs 100% standalone without any computer or host server.
@@ -14,7 +14,8 @@
 # Hardware Button Controls:
 #   - GPIO4 (Next Button):   Switch to Next Module
 #   - GPIO5 (Prev Button):   Switch to Previous Module
-#   - GPIO3 (Action Button): Sub-module toggle (°C/°F, Lang, Invert, New Seed)
+#   - GPIO3 (Action Button): Short press: Sub-module toggle (°C/°F, Lang, Invert, New Seed)
+#                            Long press (>600ms): Pause / Resume Auto-Cycling
 # ============================================================================
 
 substitutions:
@@ -23,12 +24,14 @@ substitutions:
   default_lat: "21.0285"
   default_lon: "105.8542"
   default_city: "Hanoi, VN"
+  cycle_interval: "30s"
+  use_fahrenheit_val: "false"
 
 esphome:
   name: ${name}
   friendly_name: ${friendly_name}
   on_boot:
-    priority: 800
+    priority: -100
     then:
       - output.turn_on: sd_cs_pin
       - output.turn_off: sd_en_pin
@@ -55,11 +58,11 @@ globals:
     restore_value: true
     initial_value: '0'
 
-  # Auto-cycle between modules
+  # Auto-cycle between modules (Autonomous 30s dwell)
   - id: auto_cycle_enabled
     type: bool
-    restore_value: true
-    initial_value: 'false'
+    restore_value: false
+    initial_value: 'true'
 
   # Universal Inverted / Dark Theme Toggle
   - id: dark_mode
@@ -70,12 +73,12 @@ globals:
   # Clock & Unit Format Preferences
   - id: use_24h_time
     type: bool
-    restore_value: true
+    restore_value: false
     initial_value: 'false'
   - id: use_fahrenheit
     type: bool
-    restore_value: true
-    initial_value: 'false'
+    restore_value: false
+    initial_value: '${use_fahrenheit_val}'
 
   # QLOCKTWO Language (0: EN, 1: DE, 2: FR, 3: ES, 4: IT, 5: NL)
   - id: qlock_lang_idx
@@ -183,6 +186,7 @@ logger:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+  power_save_mode: none
   ap:
     ssid: "E1001-Hub-Fallback"
     password: "fallbackpassword"
@@ -343,32 +347,38 @@ output:
 i2c:
   sda: GPIO19
   scl: GPIO20
-  scan: false
+  scan: true
+  id: bus_a
 
 time:
   # Hardware PCF8563 RTC Driver
   - platform: pcf8563
     id: pcf_rtc
+    i2c_id: bus_a
     address: 0x51
 
   # Network SNTP Time Sync (Timezone: Asia/Bangkok)
   - platform: sntp
     id: sntp_time
     timezone: "Asia/Bangkok"
+    servers:
+      - 0.pool.ntp.org
+      - 1.pool.ntp.org
+      - time.google.com
     on_time_sync:
       then:
         - pcf8563.write_time:
         - delay: 500ms
         - component.update: eink_display
     on_time:
-      # Top of the minute update (:00s)
+      # Top of the minute clock refresh (:00s)
       - seconds: 0
         then:
           - lambda: |-
-              if (id(auto_cycle_enabled)) {
-                id(active_module_index) = (id(active_module_index) + 1) % 4;
+              // If auto-cycle is paused and showing QLOCKTWO word clock (Module 1), keep time accurate
+              if (!id(auto_cycle_enabled) && id(active_module_index) == 1) {
+                id(eink_display).update();
               }
-          - component.update: eink_display
       # Periodic weather refresh every 15 minutes
       - minutes: "/15"
         seconds: 10
@@ -381,6 +391,17 @@ time:
         seconds: 25
         then:
           - script.execute: fetch_crypto_script
+
+# Autonomous Periodic Auto-Cycle Timer (30s)
+interval:
+  - interval: ${cycle_interval}
+    then:
+      - lambda: |-
+          if (id(auto_cycle_enabled)) {
+            id(active_module_index) = (id(active_module_index) + 1) % 4;
+            ESP_LOGI("AUTOCYCLE", "Autonomous cycle -> Active Module: %d", id(active_module_index));
+            id(eink_display).update();
+          }
 
 # Hardware Battery ADC Sensor
 sensor:
@@ -425,6 +446,7 @@ binary_sensor:
       then:
         - lambda: |-
             id(active_module_index) = (id(active_module_index) + 1) % 4;
+            ESP_LOGI("BUTTON", "Next button pressed -> Module: %d", id(active_module_index));
         - component.update: eink_display
 
   # Prev Button (GPIO5): Return to Previous Module
@@ -438,34 +460,44 @@ binary_sensor:
       then:
         - lambda: |-
             id(active_module_index) = (id(active_module_index) + 3) % 4;
+            ESP_LOGI("BUTTON", "Prev button pressed -> Module: %d", id(active_module_index));
         - component.update: eink_display
 
-  # Action Button (GPIO3): Contextual Sub-Action per Module
+  # Action Button (GPIO3): Short Press = Module Action, Long Press (>600ms) = Pause/Resume Auto-Cycle
   - platform: gpio
     pin:
       number: GPIO3
       mode: INPUT_PULLUP
       inverted: true
     name: "Action Button"
-    on_press:
-      then:
-        - lambda: |-
-            int cur = id(active_module_index);
-            if (cur == 0) {
-              // Weather: Toggle °C / °F
-              id(use_fahrenheit) = !id(use_fahrenheit);
-            } else if (cur == 1) {
-              // Qlocktwo: Cycle Language
-              id(qlock_lang_idx) = (id(qlock_lang_idx) + 1) % 6;
-            } else if (cur == 2) {
-              // Crypto: Toggle Invert Theme
-              id(dark_mode) = !id(dark_mode);
-            } else if (cur == 3) {
-              // Art: Reseed & Cycle Style
-              id(art_design_idx) = (id(art_design_idx) + 1) % 3;
-              id(art_seed) = (int)(esp_random() % 100000) + 1;
-            }
-        - component.update: eink_display
+    on_click:
+      - min_length: 50ms
+        max_length: 500ms
+        then:
+          - lambda: |-
+              int cur = id(active_module_index);
+              if (cur == 0) {
+                // Weather: Toggle °C / °F
+                id(use_fahrenheit) = !id(use_fahrenheit);
+              } else if (cur == 1) {
+                // Qlocktwo: Cycle Language
+                id(qlock_lang_idx) = (id(qlock_lang_idx) + 1) % 6;
+              } else if (cur == 2) {
+                // Crypto: Toggle Invert Theme
+                id(dark_mode) = !id(dark_mode);
+              } else if (cur == 3) {
+                // Art: Reseed & Cycle Style
+                id(art_design_idx) = (id(art_design_idx) + 1) % 3;
+                id(art_seed) = (int)(esp_random() % 100000) + 1;
+              }
+          - component.update: eink_display
+      - min_length: 600ms
+        max_length: 4000ms
+        then:
+          - lambda: |-
+              id(auto_cycle_enabled) = !id(auto_cycle_enabled);
+              ESP_LOGI("BUTTON", "Auto-cycle toggled: %s", id(auto_cycle_enabled) ? "ON" : "OFF");
+          - component.update: eink_display
 
 # Hardware SPI for Display
 spi:
@@ -561,7 +593,7 @@ display:
 
       int mod = id(active_module_index);
 
-      // Current time from RTC / SNTP
+      // Current time from SNTP / PCF8563 RTC
       auto time_now = id(sntp_time).now();
       if (!time_now.is_valid()) {
         time_now = id(pcf_rtc).now();
@@ -888,24 +920,32 @@ display:
       }
 
       // ============================================================================
-      // MODULE 2: NATIVE CRYPTO ASSET DASHBOARD (Clean Header & 12h Clock)
+      // MODULE 2: NATIVE CRYPTO ASSET DASHBOARD (Title & Matching Clock/Date Header)
       // ============================================================================
       else if (mod == 2) {
-        int margin_x = 24;
+        int margin_x = 20;
 
-        // Clean Header (Left: Title only, without subtitles)
-        it.printf(margin_x, 16, id(font_title), c_fg, "CRYPTO ASSET MARKET");
+        // Top Header (Left: Title matching time font_large 40px)
+        it.printf(margin_x, 14, id(font_large), c_fg, "CRYPTO ASSET MARKET");
 
-        // Clean Header (Right: 12-Hour Clock)
-        int h12 = cur_hour % 12;
-        if (h12 == 0) h12 = 12;
+        // Top Header (Right: Live Clock & Date matching Weather Header)
         char time_str[16];
-        snprintf(time_str, sizeof(time_str), "%d:%02d %s", h12, cur_min, cur_hour >= 12 ? "PM" : "AM");
-        it.printf(800 - margin_x, 16, id(font_title), c_fg, TextAlign::TOP_RIGHT, "%s", time_str);
+        if (id(use_24h_time)) {
+          snprintf(time_str, sizeof(time_str), "%02d:%02d", cur_hour, cur_min);
+        } else {
+          int h12 = cur_hour % 12;
+          if (h12 == 0) h12 = 12;
+          snprintf(time_str, sizeof(time_str), "%d:%02d %s", h12, cur_min, cur_hour >= 12 ? "PM" : "AM");
+        }
+        it.printf(800 - margin_x, 14, id(font_large), c_fg, TextAlign::TOP_RIGHT, "%s", time_str);
 
-        it.line(margin_x, 56, 800 - margin_x, 56, c_fg);
+        static const char* days_full[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+        static const char* months_full[] = {"", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+        int d_idx = (cur_day_of_week >= 1 && cur_day_of_week <= 7) ? (cur_day_of_week - 1) : 0;
+        int m_idx = (cur_month >= 1 && cur_month <= 12) ? cur_month : 1;
+        it.printf(800 - margin_x, 68, id(font_subtitle), c_fg, TextAlign::TOP_RIGHT, "%s, %s %d", days_full[d_idx], months_full[m_idx], cur_day);
 
-        // Crypto Asset Cards (BTC, ETH, ADA)
+        // Crypto Asset Cards (BTC, ETH, ADA) - No line under header
         struct CryptoItem {
           const char* sym;
           const char* name;
@@ -919,19 +959,19 @@ display:
           {"ADA", "Cardano", id(ada_price), id(ada_change_24h)}
         };
 
-        int start_y = 72;
-        int card_h = 118;
-        int gap = 16;
+        int start_y = 104;
+        int card_h = 108;
+        int gap = 14;
 
         for (int i = 0; i < 3; i++) {
           int y = start_y + i * (card_h + gap);
           it.rectangle(margin_x, y, 800 - 2 * margin_x, card_h, c_fg);
 
           // Symbol (Font 24px) & Name (Font >= 18px)
-          it.printf(margin_x + 24, y + 26, id(font_title), c_fg, "%s", items[i].sym);
-          it.printf(margin_x + 24, y + 64, id(font_body), c_fg, "%s", items[i].name);
+          it.printf(margin_x + 24, y + 22, id(font_title), c_fg, "%s", items[i].sym);
+          it.printf(margin_x + 24, y + 62, id(font_body), c_fg, "%s", items[i].name);
 
-          // Price with comma separators for >= $1,000
+          // Price with single dollar sign and comma separators for >= 1000 USD
           char p_buf[32];
           if (items[i].price >= 1000.0f) {
             int thousands = (int)(items[i].price / 1000.0f);
@@ -942,14 +982,14 @@ display:
           } else {
             snprintf(p_buf, sizeof(p_buf), "$%.4f", items[i].price);
           }
-          it.printf(520, y + 42, id(font_qlock), c_fg, TextAlign::TOP_RIGHT, "%s", p_buf);
+          it.printf(520, y + 38, id(font_qlock), c_fg, TextAlign::TOP_RIGHT, "%s", p_buf);
 
           // 24h Change Badge (Font >= 18px)
           bool is_pos = items[i].change >= 0;
           int badge_w = 120;
           int badge_h = 44;
           int badge_x = 800 - margin_x - badge_w - 24;
-          int badge_y = y + 36;
+          int badge_y = y + 32;
 
           it.rectangle(badge_x, badge_y, badge_w, badge_h, c_fg);
           it.printf(badge_x + badge_w / 2, badge_y + 11, id(font_body), c_fg, TextAlign::TOP_CENTER,
@@ -958,79 +998,89 @@ display:
       }
 
       // ============================================================================
-      // MODULE 3: NATIVE GENERATIVE ART (Full-bleed, clean, zero header text)
+      // MODULE 3: MODULAR GRID GENERATIVE ART (art-241018a by takawo)
       // ============================================================================
       else if (mod == 3) {
-        int cx = 400;
-        int cy = 240;
-        int s = id(art_seed);
-        int style = id(art_design_idx) % 3;
+        uint32_t rng_state = (uint32_t)id(art_seed);
+        if (rng_state == 0) rng_state = 1001;
+        auto next_rand = [&rng_state]() -> float {
+          rng_state = rng_state * 1664525u + 1013904223u;
+          return (float)(rng_state & 0x7FFFFFFF) / 2147483647.0f;
+        };
+        auto rand_int = [&next_rand](int min_val, int max_val) -> int {
+          return min_val + (int)(next_rand() * (float)(max_val - min_val + 1));
+        };
 
-        if (style == 0) {
-          // Style 0: Harmonic Contours
-          int levels = 35 + (s % 30);
-          int angle_steps = 180 + ((s * 7) % 60);
-          float seed_phase = (float)(s % 1000) * 0.00628f;
+        const int canvas_w = 800;
+        const int canvas_h = 480;
+        const int margin = 40;
+        const int cell_multiplier = 5;
+        const int min_factor = 2;
+        const int max_factor = 12;
+        const float arc_prob = 0.55f;
+        const int concentric_rings = 3;
 
-          for (int l = 0; l < levels; l++) {
-            float t_norm = (float)(l + 1) / (float)levels;
-            float a_base = 15.0f + t_norm * 360.0f;
-            float b_base = 10.0f + t_norm * 210.0f;
-            int prev_x = 0, prev_y = 0;
-            bool has_prev = false;
+        int factor = rand_int(min_factor, max_factor);
+        int cell_size = cell_multiplier * factor;
+        if (cell_size < 20) cell_size = 20;
 
-            for (int i = 0; i <= angle_steps; i++) {
-              float theta = (2.0f * (float)M_PI / (float)angle_steps) * (float)i;
-              float w1 = sinf(theta * 5.0f + (float)l * 0.35f + seed_phase) * cosf(theta * 3.0f + seed_phase) * 14.0f * t_norm;
-              float w2 = sinf(theta * 2.0f + (float)l * 0.18f - seed_phase) * 10.0f * t_norm;
+        int total_x = (canvas_w - margin * 2) / cell_size;
+        int total_y = (canvas_h - margin * 2) / cell_size;
+        if (total_x < 1) total_x = 1;
+        if (total_y < 1) total_y = 1;
 
-              int px = cx + (int)(cosf(theta) * (a_base + w1 + w2));
-              int py = cy + (int)(sinf(theta) * (b_base + w1));
+        int mg_x = (canvas_w - total_x * cell_size) / 2;
+        int mg_y = (canvas_h - total_y * cell_size) / 2;
 
-              if (px >= 0 && px < 800 && py >= 0 && py < 480) {
-                if (has_prev) {
-                  it.line(prev_x, prev_y, px, py, c_fg);
+        for (int i = 0; i < total_x; i++) {
+          for (int j = 0; j < total_y; j++) {
+            int top_left_x = i * cell_size + mg_x;
+            int top_left_y = j * cell_size + mg_y;
+
+            if (next_rand() < arc_prob) {
+              // Concentric Arc Module
+              int center_corner = rand_int(0, 3);
+              int cx = (center_corner % 3 == 0) ? top_left_x : (top_left_x + cell_size);
+              int cy = (center_corner < 2) ? top_left_y : (top_left_y + cell_size);
+              float begin_rad = (float)center_corner * (float)(M_PI / 2.0);
+
+              for (int ring = concentric_rings; ring >= 1; ring--) {
+                float scl = (float)ring / (float)concentric_rings;
+                float r = (float)cell_size * scl;
+                int segments = 12;
+                int prev_px = 0, prev_py = 0;
+                for (int s = 0; s <= segments; s++) {
+                  float theta = begin_rad + ((float)(M_PI / 2.0) * ((float)s / (float)segments));
+                  int px = cx + (int)(cosf(theta) * r);
+                  int py = cy + (int)(sinf(theta) * r);
+                  if (px >= 0 && px < 800 && py >= 0 && py < 480) {
+                    if (s > 0) {
+                      it.line(prev_px, prev_py, px, py, c_fg);
+                    }
+                    prev_px = px;
+                    prev_py = py;
+                  }
                 }
-                prev_x = px;
-                prev_y = py;
-                has_prev = true;
-              } else {
-                has_prev = false;
               }
-            }
-          }
-        } else if (style == 1) {
-          // Style 1: Harmonic Rings & Wave Harmonics
-          int rings = 32;
-          for (int r = 1; r <= rings; r++) {
-            float rad = r * 7.5f;
-            int prev_x = 0, prev_y = 0;
-            bool has_prev = false;
-            for (float a = 0; a <= (float)(M_PI * 2.0); a += 0.05f) {
-              float deform = sinf(a * 6.0f + r * 0.3f) * (5.0f + r * 0.35f) + cosf(a * 4.0f) * 4.0f;
-              int px = cx + (int)(cosf(a) * (rad + deform));
-              int py = cy + (int)(sinf(a) * (rad + deform));
-              if (has_prev) it.line(prev_x, prev_y, px, py, c_fg);
-              prev_x = px;
-              prev_y = py;
-              has_prev = true;
-            }
-          }
-        } else {
-          // Style 2: Topological Sacred Rosette
-          int petals = 8 + (s % 8);
-          for (int r = 2; r <= 28; r++) {
-            float rad_base = r * 8.0f;
-            int prev_x = 0, prev_y = 0;
-            bool has_prev = false;
-            for (float a = 0; a <= (float)(M_PI * 2.0); a += 0.04f) {
-              float r_mod = rad_base + sinf(a * (float)petals + (float)r * 0.2f) * (rad_base * 0.25f);
-              int px = cx + (int)(cosf(a) * r_mod);
-              int py = cy + (int)(sinf(a) * r_mod);
-              if (has_prev) it.line(prev_x, prev_y, px, py, c_fg);
-              prev_x = px;
-              prev_y = py;
-              has_prev = true;
+            } else {
+              // Diagonal / Segmented Line Module
+              int begin_idx = rand_int(0, 3);
+              int end_offset = rand_int(1, 3);
+              int end_idx = (begin_idx + end_offset) % 4;
+
+              auto get_corner_x = [top_left_x, cell_size](int idx) -> int {
+                return (idx == 0 || idx == 3) ? top_left_x : (top_left_x + cell_size);
+              };
+              auto get_corner_y = [top_left_y, cell_size](int idx) -> int {
+                return (idx == 0 || idx == 1) ? top_left_y : (top_left_y + cell_size);
+              };
+
+              int x1 = get_corner_x(begin_idx);
+              int y1 = get_corner_y(begin_idx);
+              int x2 = get_corner_x(end_idx);
+              int y2 = get_corner_y(end_idx);
+
+              it.line(x1, y1, x2, y2, c_fg);
             }
           }
         }
