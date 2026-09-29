@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seeed reTerminal E1001 - World News Screen</title>
+  <!-- Google Fonts: Roboto -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  <!-- p5.js Core Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="header-left">
+        <h1 class="title">Seeed reTerminal E1001 &bull; World News Screen</h1>
+        <span class="badge badge-live" id="api-status-badge">Currents API: Connected</span>
+        <span class="badge">800 &times; 480 E-Paper</span>
+      </div>
+      <div class="header-right">
+        <span class="badge" id="rate-badge">Rate Limit: &le;10 req/hr</span>
+        <span class="version-tag">v2026.09.29.20.54.00</span>
+      </div>
+    </header>
+
+    <main class="canvas-wrapper">
+      <div id="eink-canvas-container" class="eink-bezel">
+        <!-- p5.js canvas rendered here -->
+      </div>
+    </main>
+
+    <footer class="app-controls">
+      <div class="control-row">
+        <div class="control-group">
+          <label for="palette-select">Palette:</label>
+          <select id="palette-select" class="styled-select">
+            <option value="0" selected>0: Monochrome Minimalist</option>
+            <option value="1">1: Charcoal & Slate</option>
+            <option value="2">2: High Contrast 1-Bit</option>
+            <option value="3">3: Carbon Modern</option>
+            <option value="4">4: Stipple Ink Tones</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="time-format-select">Time:</label>
+          <select id="time-format-select" class="styled-select">
+            <option value="12" selected>12-Hour (AM/PM)</option>
+            <option value="24">24-Hour</option>
+          </select>
+        </div>
+
+        <div class="button-group">
+          <button id="btn-refresh" class="btn btn-secondary">🔄 Refresh Headlines [R]</button>
+          <button id="btn-export" class="btn btn-secondary">💾 Export PNG [S]</button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- p5.js sketch logic -->
+  <script src="sketch.js"></script>
+  <script>
+    document.getElementById('palette-select').addEventListener('change', (e) => {
+      ACTIVE_PALETTE_INDEX = parseInt(e.target.value, 10);
+      redrawScreen();
+    });
+
+    document.getElementById('time-format-select').addEventListener('change', (e) => {
+      USE_24H = e.target.value === '24';
+      redrawScreen();
+    });
+
+    document.getElementById('btn-refresh').addEventListener('click', () => {
+      fetchNewsData();
+    });
+
+    document.getElementById('btn-export').addEventListener('click', () => {
+      saveCanvas(canvasInstance, 'e1001_world_news.png');
+    });
+  </script>
+</body>
+</html>

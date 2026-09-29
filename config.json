@@ -25,6 +25,16 @@
       "dwell_seconds": 30
     },
     {
+      "id": "brutalist",
+      "name": "Brutalist 3D Art",
+      "description": "Generative 3D isometric brutalist architectural pipe structure (by dsa157.art)",
+      "path": "modules/art-brutalist",
+      "entry": "modules/art-brutalist/index.html",
+      "port": 8007,
+      "enabled": true,
+      "dwell_seconds": 30
+    },
+    {
       "id": "crypto",
       "name": "Crypto Asset Dashboard",
       "description": "Real-time cryptocurrency price tracker with 24h delta and sparklines via CoinMarketCap",
@@ -81,6 +91,16 @@
       "path": "modules/art-241018a",
       "entry": "modules/art-241018a/index.html",
       "port": 8005,
+      "enabled": true,
+      "dwell_seconds": 30
+    },
+    {
+      "id": "news",
+      "name": "World News",
+      "description": "Breaking world news headlines with category pills via Currents API (by dsa157)",
+      "path": "modules/news",
+      "entry": "modules/news/index.html",
+      "port": 8008,
       "enabled": true,
       "dwell_seconds": 30
     }

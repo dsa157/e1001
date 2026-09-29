@@ -27,6 +27,8 @@ const { renderCrypto } = require('./lib/renderers/cryptoRenderer');
 const { renderArt1 } = require('./lib/renderers/art1Renderer');
 const { renderArt241018a } = require('./lib/renderers/art241018aRenderer');
 const { renderUmlaut } = require('./lib/renderers/umlautRenderer');
+const { renderBrutalist } = require('./lib/renderers/brutalistRenderer');
+const { renderNews, fetchWorldNews } = require('./lib/renderers/newsRenderer');
 const { renderTasks } = require('./lib/renderers/tasksRenderer');
 const { to1BitPng } = require('./lib/png1bit');
 
@@ -148,6 +150,18 @@ app.get('/', (req, res) => {
 // --- HUB API ENDPOINTS ---
 
 /**
+ * GET /api/news - World News JSON endpoint (cached & rate limited)
+ */
+app.get('/api/news', async (req, res) => {
+  try {
+    const data = await fetchWorldNews(env.CURRENTS_API_KEY || process.env.CURRENTS_API_KEY);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
  * GET /api/status - Current hub status
  */
 app.get('/api/status', (req, res) => {
@@ -213,6 +227,12 @@ app.get('/api/screen.png', async (req, res) => {
         seed: state.seed || Date.now(),
         paletteIndex
       });
+    } else if (moduleId === 'brutalist') {
+      const state = moduleActionStates['brutalist'] || {};
+      buffer = await renderBrutalist({
+        seed: state.seed || Date.now(),
+        paletteIndex
+      });
     } else if (moduleId === 'art1-test') {
       const state = moduleActionStates['art1-test'] || {};
       buffer = await renderArt1({
@@ -223,6 +243,12 @@ app.get('/api/screen.png', async (req, res) => {
     } else if (moduleId === 'tasks') {
       buffer = await renderTasks({
         paletteIndex
+      });
+    } else if (moduleId === 'news') {
+      buffer = await renderNews({
+        apiKey: env.CURRENTS_API_KEY || process.env.CURRENTS_API_KEY,
+        paletteIndex,
+        use24h: default24h
       });
     } else {
       buffer = await renderWeather({ paletteIndex, useFahrenheit: defaultFahrenheit, use24h: default24h });

@@ -11,13 +11,13 @@
     "tasks": "node modules/tasks/server.js",
     "qlocktwo": "node modules/qlocktwo/server.js",
     "art1": "npx serve -l 8001 modules/art1-test",
-    "flash:hub": ".venv/bin/esphome run firmware/e1001_hub_client.yaml --device /dev/cu.usbserial-210",
-    "flash:art1": ".venv/bin/esphome run firmware/e1001_art1.yaml --device /dev/cu.usbserial-210",
-    "flash:weather": ".venv/bin/esphome run firmware/e1001_weather.yaml --device /dev/cu.usbserial-210",
-    "flash:crypto": ".venv/bin/esphome run firmware/e1001_crypto.yaml --device /dev/cu.usbserial-210",
-    "flash:qlocktwo": ".venv/bin/esphome run firmware/e1001_qlocktwo.yaml --device /dev/cu.usbserial-210",
-    "flash:tasks": ".venv/bin/esphome run firmware/e1001_tasks.yaml --device /dev/cu.usbserial-210",
-    "flash:unified": ".venv/bin/esphome run firmware/e1001_unified_hub.yaml --device /dev/cu.usbserial-210"
+    "flash:hub": ".venv/bin/esphome run firmware/e1001_hub_client.yaml --device /dev/cu.usbserial-110",
+    "flash:art1": ".venv/bin/esphome run firmware/e1001_art1.yaml --device /dev/cu.usbserial-110",
+    "flash:weather": ".venv/bin/esphome run firmware/e1001_weather.yaml --device /dev/cu.usbserial-110",
+    "flash:crypto": ".venv/bin/esphome run firmware/e1001_crypto.yaml --device /dev/cu.usbserial-110",
+    "flash:qlocktwo": ".venv/bin/esphome run firmware/e1001_qlocktwo.yaml --device /dev/cu.usbserial-110",
+    "flash:tasks": ".venv/bin/esphome run firmware/e1001_tasks.yaml --device /dev/cu.usbserial-110",
+    "flash:unified": ".venv/bin/esphome run firmware/e1001_unified_hub.yaml --device /dev/cu.usbserial-110"
   },
   "keywords": [
     "e1001",

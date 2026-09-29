@@ -1,0 +1,193 @@
+{
+  "lastQueryTime": 1790691369345,
+  "hourlyTimestamps": [
+    1790690195272,
+    1790690195276,
+    1790690558813,
+    1790690558835,
+    1790691369335,
+    1790691369345
+  ],
+  "data": [
+    {
+      "id": "10cc27ec-ff20-53cf-9696-e860a2ed7523",
+      "title": "Frontiers | A deep learning-based silhouette gait detection framework for fall risk classification in Parkinson’s disease",
+      "description": "BackgroundParkinson’s disease (PD) is a rapidly growing neurodegenerative disorder associated with gait impairment, functional decline, and increased fall ri...",
+      "author": "Chu; Slo-Li; Kuo; Chia-Ju; Chiu; Wang; Chiaching; Wu; Shey-Lin; Lin; Ping-Yi",
+      "category": "ACADEMIA",
+      "published": "2026-09-29 14:13:53 +0000",
+      "url": "https://www.frontiersin.org/journals/neurology/articles/10.3389/fneur.2026.1944666/full"
+    },
+    {
+      "id": "33875648-9855-54c3-96d2-f087d560d04c",
+      "title": "Frontiers | Dual-informant clinical outcome assessment in the inclusive orchestra: measurement architecture for neurodevelopmental disorders prior to empirical evaluation",
+      "description": "BackgroundSystematic behavioral observation in a group requires the rater to know when a target behavior could have occurred. In an inclusive orchestra the n...",
+      "author": "Liuzzi; Tommaso; D’Arienzo; Fiammetta; Staccioli; Susanna; Bompard; Sarah; Frascari Diotallevi; Martina; Giuliani; Roberto; Lettori; Donatella; Castelli; Enrico",
+      "category": "ACADEMIA",
+      "published": "2026-09-29 14:13:52 +0000",
+      "url": "https://www.frontiersin.org/journals/neurology/articles/10.3389/fneur.2026.1834441/full"
+    },
+    {
+      "id": "e1ef846f-9825-5edd-b823-3404a5b3c504",
+      "title": "How to Find Questions Left Unanswered in a Meeting Recording in 2026",
+      "description": "Use local AI to review a meeting transcript for open questions, then check the recording before preparing focused follow-ups.",
+      "author": "Mohammed Ali Chherawalla",
+      "category": "PROGRAMMING",
+      "published": "2026-09-29 14:13:13 +0000",
+      "url": "https://dev.to/alichherawalla/how-to-find-questions-left-unanswered-in-a-meeting-recording-in-2026-666"
+    },
+    {
+      "id": "21a9c6f9-24ae-56ed-bc44-3a5c9a701a5d",
+      "title": "My headless AI server setup stopped dying when I got boring about queues and 30-second watchdogs",
+      "description": "A practical DEV post on making headless AI agent infrastructure actually reliable: split ingress from execution, design replay-safe jobs, detect hung",
+      "author": "Lars Winstand",
+      "category": "PROGRAMMING",
+      "published": "2026-09-29 14:13:11 +0000",
+      "url": "https://dev.to/lars_winstand/my-headless-ai-server-setup-stopped-dying-when-i-got-boring-about-queues-and-30-second-watchdogs-3im5"
+    },
+    {
+      "id": "1ece476d-10e8-54ba-8c6e-0cd4224326bc",
+      "title": "I made Hindsight Memory Survive a New Interaction",
+      "description": "I Let the Current Issue Shape Hindsight Recall Persistent memory is useful only when it is relevant...",
+      "author": "Sahasra",
+      "category": "PROGRAMMING",
+      "published": "2026-09-29 14:13:09 +0000",
+      "url": "https://dev.to/sahasra/i-made-hindsight-memory-survive-a-new-interaction-3p6c"
+    },
+    {
+      "id": "16cb0b91-3eb8-57c5-808e-cc405bf810de",
+      "title": "Triton Stone Group Celebrates 20 years of Service",
+      "description": "MOBILE, Ala. (WKRG) — Triton Stone Group started in 2006 and began as a way to help rebuild New Orleans after Hurricane Katrina.  Katie Jensen, co-founder of Triton Stone Group, joined WKRG News 5’s Take 5 to share the mission of Triton Stone Group and what drives the company today.",
+      "author": "Keylee Fillingim",
+      "category": "REGIONAL",
+      "published": "2026-09-29 14:12:58 +0000",
+      "url": "https://www.wkrg.com/take-5/triton-stone-group-celebrates-20-years-of-service/"
+    },
+    {
+      "id": "a1cf68a8-107e-5f58-9e6f-38a25ccd22dd",
+      "title": "Frontiers | Therapeutic potential of oncolytic viruses in hematopoietic malignancies: from preclinical insights to clinical realities",
+      "description": "While certain forms of lymphoma—such as classical Hodgkin lymphoma—are classified as curable, with over half of all patients achieving remission following fi...",
+      "author": "Erkens; Sebastian; Ghebrehiwot; Dawit Belai; Knierer; Julius; Wang; Xiaofang; Ehrhardt; Anja; Zhang; Wenli",
+      "category": "ACADEMIA",
+      "published": "2026-09-29 14:12:45 +0000",
+      "url": "https://www.frontiersin.org/journals/microbiology/articles/10.3389/fmicb.2026.1925346/full"
+    },
+    {
+      "id": "2f4e1954-c075-54eb-9bfb-4b72dcbb4a13",
+      "title": "SupportMind: Building an AI Customer Support Agent with Memory",
+      "description": "🚀 SupportMind: An AI Customer Support Agent with Memory For HackHyderabad 3.0, I built SupportMind,...",
+      "author": "Bhavyasri Routhu",
+      "category": "PROGRAMMING",
+      "published": "2026-09-29 14:12:37 +0000",
+      "url": "https://dev.to/bhavyasri_routhu_26455e3c/supportmind-building-an-ai-customer-support-agent-with-memory-1pgp"
+    },
+    {
+      "id": "5d0d4b61-6a4c-5489-a5b6-70888f779b6a",
+      "title": "Frontiers | Association between single euploid embryo transfer and pregnancy outcomes in women of advanced maternal age: a propensity score-matched analysis",
+      "description": "ObjectiveTo explore the correlation between preimplantation genetic testing for aneuploidy (PGT-A) and pregnancy, miscarriage, and live birth outcomes among ...",
+      "author": "Qin; Bojin; Lin; Xiaolong; Yang; Zengyu; Chun; Wang; Liyan; Liu; Xiaofei; Zhong; Junjie; Lan; Zhang; Juguang; Wei; Su'e; Zhu; Li; Xiang",
+      "category": "ACADEMIA",
+      "published": "2026-09-29 14:12:34 +0000",
+      "url": "https://www.frontiersin.org/journals/endocrinology/articles/10.3389/fendo.2026.1921930/full"
+    },
+    {
+      "id": "d1d64de5-9a1c-57c1-84f0-57fb700b493e",
+      "title": "'If You Know...': Tukaram Mundhe Responds To Sanjay Raut’s FDA Bribery Claims, Says Infant Nutrition Next Target",
+      "description": "FDA Seizes Rs 1.26-Crore Gutkha, Next Target Is Infant Nutrition: Mundhe said Raut's allegations should be supported by specific information so that action can be taken",
+      "author": "Manjiri Joshi; Ananya Gupta",
+      "category": "GENERAL",
+      "published": "2026-09-29 14:12:34 +0000",
+      "url": "https://www.news18.com/india/tukaram-mundhe-says-next-target-is-infant-nutrition-responds-to-sanjay-rauts-bribery-allegation-as-fda-seizes-rs-1-26-crore-gutkha-ws-klrt-10359742.html"
+    },
+    {
+      "id": "d59481af-e4a9-5eef-89d3-d868fa2d9793",
+      "title": "Canada's economic growth unchanged in July, August likely to expand 0.2% - The Korea Times",
+      "description": "OTTAWA — Canada's economic growth was flat in July, data showed on Tuesday, in line with expectations and signaling a slower start to the third qua...",
+      "author": "Reuters",
+      "category": "REGIONAL",
+      "published": "2026-09-29 14:12:03 +0000",
+      "url": "https://www.koreatimes.co.kr/world/20260929/canadas-economic-growth-unchanged-in-july-august-likely-to-expand-02"
+    },
+    {
+      "id": "d3f29c81-419c-5336-81d8-f126d8d3a568",
+      "title": "8 in 10 S. Koreans view 2 Koreas as separate states: poll - The Korea Times",
+      "description": "More than 80 percent of South Koreans viewed South and North Korea as separate states, a survey showed Tuesday. According to the poll conducted by...",
+      "author": "World News",
+      "category": "REGIONAL",
+      "published": "2026-09-29 14:12:03 +0000",
+      "url": "https://www.koreatimes.co.kr/foreignaffairs/northkorea/20260929/8-in-10-s-koreans-view-2-koreas-as-separate-states-poll"
+    },
+    {
+      "id": "648346f0-521f-5751-bd0e-5ce144cfb7b4",
+      "title": "China rolls out new measures to bolster its property sector and economy - The Korea Times",
+      "description": "BEIJING — China on Tuesday rolled out new measures to help boost its economy and sluggish property sector as pressures ramp up ahead of a year-end...",
+      "author": "AP",
+      "category": "REGIONAL",
+      "published": "2026-09-29 14:12:03 +0000",
+      "url": "https://www.koreatimes.co.kr/world/20260929/china-rolls-out-new-measures-to-bolster-its-property-sector-and-economy"
+    },
+    {
+      "id": "e94627dd-0087-50bc-a632-c12048409480",
+      "title": "The MN Stolen Neighbors Quilt",
+      "description": "Over the past six months, dozens of people pitched in to create the MN Stolen Neighbors Quilt, which is made of 12,500 squares, each one representing an immigra",
+      "author": "Jason Kottke",
+      "category": "OPINION",
+      "published": "2026-09-29 14:12:00 +0000",
+      "url": "https://kottke.org/26/09/the-mn-stolen-neighbors-quilt"
+    },
+    {
+      "id": "51bcdd72-2ad4-546a-8301-515b9f7c83a5",
+      "title": "Mom, 29, left 'young children home alone so she could go on CRUISE'",
+      "description": "Nathalie Belizaire, 29, allegedly left her children alone in her home in North Miami Beach on Friday so she could go on a four-day Carnival Conquest cruise to the Bahamas.",
+      "author": "Will Potter",
+      "category": "GENERAL",
+      "published": "2026-09-29 14:11:22 +0000",
+      "url": "https://www.dailymail.com/news/article-16169249/Nathalie-Belizaire-cruise-children-abandoned-Miami-Florida.html?ns_campaign=1490&ito=1490"
+    },
+    {
+      "id": "b5e01ccd-2a1d-50b3-87a4-8197b3e55f14",
+      "title": "Best AI-Powered Data Modeling Tools (2026)",
+      "description": "Data modeling used to be the slow, unglamorous part of the analytics stack. You'd sketch an ERD, argue about naming conventions, generate some DDL, and hope the physical schema matched what the business actually wanted. In 2026, that whole workflow has been rewired by AI. Copilots write DDL from pro...",
+      "author": "Naveen",
+      "category": "PROGRAMMING",
+      "published": "2026-09-29 14:11:17 +0000",
+      "url": "https://dev.to/naveensub/best-ai-powered-data-modeling-tools-2026-2hpc"
+    },
+    {
+      "id": "308bc695-3d06-5c62-8799-a3ba36586298",
+      "title": "Leaked images reveal new colors for Amazon’s next entry-level Kindle",
+      "description": "Amazon’s next basic Kindle is getting one very welcome upgrade.",
+      "author": "Andrew Liszewski",
+      "category": "TECHNOLOGY",
+      "published": "2026-09-29 14:10:50 +0000",
+      "url": "https://www.theverge.com/tech/1001905/amazon-leak-basic-entry-level-kindle-colors-design-power-button"
+    },
+    {
+      "id": "1e7f052e-e3f0-52a9-b416-250c4e7a6a90",
+      "title": "How to Find Gaps in a Project Handover With Local AI in 2026",
+      "description": "Review a project handover for missing owners, unclear decisions, stale documents, and blocked next steps with AI running on your computer.",
+      "author": "Mohammed Ali Chherawalla",
+      "category": "PROGRAMMING",
+      "published": "2026-09-29 14:10:30 +0000",
+      "url": "https://dev.to/alichherawalla/how-to-find-gaps-in-a-project-handover-with-local-ai-in-2026-2gi5"
+    },
+    {
+      "id": "76d7481f-094d-5ff3-a43c-507a75564ba4",
+      "title": "Spanish government unveils new measures aimed at easing housing crisis",
+      "description": "The government has been facing growing pressure from a housing protest movement amid high costs and public outcry over the eviction of an 87-year-old woman. #EuropeNews",
+      "author": "Christina Thykjaer; Javier Iniguez De Onzono",
+      "category": "POLITICS",
+      "published": "2026-09-29 14:10:29 +0000",
+      "url": "https://www.euronews.com/2026/09/29/spanish-government-unveils-new-measures-aimed-at-easing-housing-crisis"
+    },
+    {
+      "id": "20e2f0fc-bf21-595b-8dc4-e1f7dad41fcd",
+      "title": "Guinea-Bissau vs Nigeria: AFCON 2027 qualifier - LIVE",
+      "description": "Super Eagles aiming to build on win over Madagascar as qualification for the 2027 Africa Cup of Nations continues",
+      "author": "Tashan Deniran-Alleyne",
+      "category": "GENERAL",
+      "published": "2026-09-29 14:10:13 +0000",
+      "url": "https://www.standard.co.uk/sport/football/guinea-bissau-vs-nigeria-live-stream-latest-score-updates-result-b1298848.html"
+    }
+  ]
+}

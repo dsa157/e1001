@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E1001 3D-Isometric Brutalist Art - p5.js</title>
+  <!-- Shared Common E1001 Stylesheet -->
+  <link rel="stylesheet" href="../../common/e1001-style.css">
+  <link rel="stylesheet" href="../art1-test/style.css">
+  <!-- p5.js core library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+  <!-- Shared Common E1001 Core Library -->
+  <script src="../../common/e1001-common.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="header-left">
+        <h1 class="title">Seeed reTerminal E1001 &bull; 3D-Isometric Brutalist Art</h1>
+        <span class="badge">800 &times; 480 Full-Bleed</span>
+      </div>
+      <div class="header-right">
+        <span id="seed-display" class="badge">Seed: Dynamic</span>
+        <span id="version-display" class="version-tag">v2026.09.29.20.39.00</span>
+      </div>
+    </header>
+
+    <main class="canvas-wrapper">
+      <div id="eink-canvas-container" class="eink-bezel">
+        <!-- p5.js canvas injected here -->
+      </div>
+    </main>
+
+    <footer class="app-controls">
+      <div class="control-group">
+        <label for="palette-select">Palette:</label>
+        <select id="palette-select" class="styled-select" onchange="ACTIVE_PALETTE_INDEX = parseInt(this.value, 10); generateArt();">
+          <option value="0">0: E-Ink Minimalist Monochrome</option>
+          <option value="1">1: Japanese Woodblock / Wabi-Sabi</option>
+          <option value="2">2: Retro Bauhaus Modern</option>
+          <option value="3">3: Nordic Frost & Slate</option>
+          <option value="4">4: Sand & Terracotta Coast</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="bg-select">Background:</label>
+        <select id="bg-select" class="styled-select" onchange="BG_COLOR_INDEX = parseInt(this.value, 10); generateArt();">
+          <option value="4">Tone 4 (Light/Default)</option>
+          <option value="0">Tone 0 (Dark/Deep)</option>
+          <option value="1">Tone 1</option>
+          <option value="2">Tone 2</option>
+          <option value="3">Tone 3</option>
+        </select>
+      </div>
+
+      <div class="button-group">
+        <button id="btn-reseed" class="btn btn-secondary" onclick="GLOBAL_SEED = Date.now(); document.getElementById('seed-display').textContent = 'Seed: ' + GLOBAL_SEED; generateArt();">New Seed [R]</button>
+        <button id="btn-export" class="btn btn-primary" onclick="saveCanvas(canvas, 'e1001_brutalist_' + GLOBAL_SEED + '.png');">Export PNG [S]</button>
+      </div>
+    </footer>
+  </div>
+
+  <script src="orig.js"></script>
+</body>
+</html>
