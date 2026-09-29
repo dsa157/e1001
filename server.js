@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * Seeed reTerminal E1001 - Master Dashboard Hub & Image Stream Server
- * Version: 2026.09.29.16.02.00
+ * Version: 2026.09.29.17.28.00
  * Description: Orchestrates multi-module display cycling, serves live 800x480
  *              1-bit / grayscale image stream (/api/screen.png) to Seeed E1001,
  *              and provides a web dashboard with real-time controls.
@@ -25,6 +25,7 @@ const { renderQlocktwo } = require('./lib/renderers/qlocktwoRenderer');
 const { renderWeather } = require('./lib/renderers/weatherRenderer');
 const { renderCrypto } = require('./lib/renderers/cryptoRenderer');
 const { renderArt1 } = require('./lib/renderers/art1Renderer');
+const { renderArt241018a } = require('./lib/renderers/art241018aRenderer');
 const { renderTasks } = require('./lib/renderers/tasksRenderer');
 const { to1BitPng } = require('./lib/png1bit');
 
@@ -52,21 +53,23 @@ function loadEnv() {
 
 const env = loadEnv();
 
-// In-Memory Hub State
+// In-Memory Hub State: Initialized with environment defaults
 let hubConfig = {
   settings: {
     server_port: parseInt(env.HUB_PORT, 10) || DEFAULT_PORT,
-    display_width: CANVAS_WIDTH,
-    display_height: CANVAS_HEIGHT,
+    display_width: parseInt(env.DISPLAY_WIDTH, 10) || CANVAS_WIDTH,
+    display_height: parseInt(env.DISPLAY_HEIGHT, 10) || CANVAS_HEIGHT,
     cycle_enabled: env.CYCLE_ENABLED !== 'false',
     default_dwell_seconds: parseInt(env.DEFAULT_DWELL_SECONDS, 10) || 30,
     active_palette_index: parseInt(env.ACTIVE_PALETTE_INDEX, 10) || 0,
+    time_format: parseInt(env.TIME_FORMAT, 10) || 12,
+    weather_units: (env.WEATHER_UNITS || 'C').toUpperCase(),
     global_seed: parseInt(env.GLOBAL_SEED, 10) || 1001
   },
   modules: []
 };
 
-// Load config from disk
+// Load config from disk (config.json loaded AFTER .env, overriding/augmenting defaults)
 function loadConfig() {
   try {
     if (fs.existsSync(CONFIG_FILE_PATH)) {
@@ -168,8 +171,12 @@ app.get('/api/screen.png', async (req, res) => {
   try {
     const current = getActiveModule();
     const moduleId = current ? current.id : 'weather';
-    const paletteIndex = hubConfig.settings.active_palette_index;
-    const seed = hubConfig.settings.global_seed;
+    const paletteIndex = hubConfig.settings.active_palette_index !== undefined ? hubConfig.settings.active_palette_index : 0;
+    const seed = hubConfig.settings.global_seed || 1001;
+    const weatherUnits = (hubConfig.settings.weather_units || env.WEATHER_UNITS || 'C').toUpperCase();
+    const timeFormat = parseInt(hubConfig.settings.time_format || env.TIME_FORMAT || 12, 10);
+    const defaultFahrenheit = weatherUnits === 'F';
+    const default24h = timeFormat === 24;
 
     let buffer;
     if (moduleId === 'qlocktwo') {
@@ -180,14 +187,23 @@ app.get('/api/screen.png', async (req, res) => {
       });
     } else if (moduleId === 'weather') {
       const state = moduleActionStates['weather'] || {};
+      const isFahrenheit = state.useFahrenheit !== undefined ? state.useFahrenheit : defaultFahrenheit;
+      const is24h = state.use24h !== undefined ? state.use24h : default24h;
       buffer = await renderWeather({
         paletteIndex,
-        city: env.WEATHER_DEFAULT_CITY || 'Bangkok',
-        useFahrenheit: state.useFahrenheit || false,
-        use24h: state.use24h || false
+        city: env.WEATHER_DEFAULT_CITY || 'Hanoi',
+        useFahrenheit: isFahrenheit,
+        use24h: is24h
       });
     } else if (moduleId === 'crypto') {
       buffer = await renderCrypto({
+        paletteIndex,
+        use24h: default24h
+      });
+        } else if (moduleId === 'art-241018a') {
+      const state = moduleActionStates['art-241018a'] || {};
+      buffer = await renderArt241018a({
+        seed: state.seed || seed,
         paletteIndex
       });
     } else if (moduleId === 'art1-test') {
@@ -202,7 +218,7 @@ app.get('/api/screen.png', async (req, res) => {
         paletteIndex
       });
     } else {
-      buffer = await renderWeather({ paletteIndex });
+      buffer = await renderWeather({ paletteIndex, useFahrenheit: defaultFahrenheit, use24h: default24h });
     }
 
     // Convert to compact 1-bit dithered PNG for e-ink and fast HTTP transfer (<10KB)
@@ -238,7 +254,7 @@ app.all('/api/next', (req, res) => {
     if (current.id === 'weather') {
       moduleActionStates['weather'] = moduleActionStates['weather'] || {};
       moduleActionStates['weather'].useFahrenheit = !moduleActionStates['weather'].useFahrenheit;
-    } else if (current.id === 'art1-test') {
+    } else if (current.id === 'art-241018a' || current.id === 'art1-test') {
       moduleActionStates['art1-test'] = moduleActionStates['art1-test'] || {};
       moduleActionStates['art1-test'].styleIndex = ((moduleActionStates['art1-test'].styleIndex || 0) + 1) % 3;
     }
@@ -264,7 +280,7 @@ app.all('/api/prev', (req, res) => {
     if (current.id === 'weather') {
       moduleActionStates['weather'] = moduleActionStates['weather'] || {};
       moduleActionStates['weather'].use24h = !moduleActionStates['weather'].use24h;
-    } else if (current.id === 'art1-test') {
+    } else if (current.id === 'art-241018a' || current.id === 'art1-test') {
       hubConfig.settings.active_palette_index = (hubConfig.settings.active_palette_index + 1) % 5;
     }
     res.json({ success: true, message: `Action triggered for single module: ${current.id}` });

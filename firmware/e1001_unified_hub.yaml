@@ -1,6 +1,6 @@
 # ============================================================================
 # Seeed reTerminal E1001 - Unified Native ESPHome Multi-Module Dashboard
-# Version: 2026.09.29.17.00.00
+# Version: 2026.09.29.17.28.00
 # Description: 100% Autonomous, on-device multi-module dashboard for Seeed E1001
 #              (ESP32-S3 + Waveshare 7.50in V2 800x480 e-paper display).
 #              Runs 100% standalone without any computer or host server.
@@ -619,9 +619,9 @@ display:
         // Header Divider Line
         it.line(margin_x, 136, 800 - margin_x, 136, c_fg);
 
-        // 5-Day Forecast Grid Cards
+        // 5-Day Forecast Grid Cards (Expanded to fill display cleanly, no footer)
         int card_w = 140;
-        int card_h = 260;
+        int card_h = 300;
         int card_gap = 15;
         int start_x = margin_x;
         int body_y = 150;
@@ -637,18 +637,18 @@ display:
 
           // Card Day Name
           if (i == 0) {
-            it.printf(cx + card_w / 2, body_y + 12, id(font_subtitle), c_fg, TextAlign::TOP_CENTER, "TODAY");
+            it.printf(cx + card_w / 2, body_y + 14, id(font_subtitle), c_fg, TextAlign::TOP_CENTER, "TODAY");
           } else {
             int d_name_idx = (cur_day_of_week - 1 + i) % 7;
-            it.printf(cx + card_w / 2, body_y + 12, id(font_subtitle), c_fg, TextAlign::TOP_CENTER, "%s", day_abbrs[d_name_idx]);
+            it.printf(cx + card_w / 2, body_y + 14, id(font_subtitle), c_fg, TextAlign::TOP_CENTER, "%s", day_abbrs[d_name_idx]);
           }
 
           // Card Date (Font >= 18px)
-          it.printf(cx + card_w / 2, body_y + 36, id(font_body), c_fg, TextAlign::TOP_CENTER, "%d %s", cur_day + i, months_full[m_idx]);
+          it.printf(cx + card_w / 2, body_y + 40, id(font_body), c_fg, TextAlign::TOP_CENTER, "%d %s", cur_day + i, months_full[m_idx]);
 
           // Weather Icon
           int img_x = cx + (card_w - 42) / 2;
-          int img_y = body_y + 64;
+          int img_y = body_y + 75;
           int code = card_codes[i];
           if (code == 0) it.image(img_x, img_y, id(img_sun));
           else if (code == 1 || code == 2) it.image(img_x, img_y, id(img_cloud_sun));
@@ -666,7 +666,7 @@ display:
           else if (code >= 51 && code <= 67) c_name = "Rain";
           else if (code >= 80 && code <= 82) c_name = "Showers";
           else if (code >= 95) c_name = "Storm";
-          it.printf(cx + card_w / 2, body_y + 122, id(font_body), c_fg, TextAlign::TOP_CENTER, "%s", c_name);
+          it.printf(cx + card_w / 2, body_y + 140, id(font_body), c_fg, TextAlign::TOP_CENTER, "%s", c_name);
 
           // Temps High / Low
           int max_t = card_max_c[i];
@@ -675,14 +675,9 @@ display:
             max_t = (int)((max_t * 9.0f / 5.0f) + 32.0f);
             min_t = (int)((min_t * 9.0f / 5.0f) + 32.0f);
           }
-          it.printf(cx + card_w / 2 - 22, body_y + 160, id(font_subtitle), c_fg, TextAlign::TOP_CENTER, "%d°", max_t);
-          it.printf(cx + card_w / 2 + 22, body_y + 160, id(font_body), c_fg, TextAlign::TOP_CENTER, "%d°", min_t);
+          it.printf(cx + card_w / 2 - 22, body_y + 195, id(font_subtitle), c_fg, TextAlign::TOP_CENTER, "%d°", max_t);
+          it.printf(cx + card_w / 2 + 22, body_y + 195, id(font_body), c_fg, TextAlign::TOP_CENTER, "%d°", min_t);
         }
-
-        // Footer Section (Font >= 18px)
-        it.printf(margin_x, 435, id(font_body), c_fg, "Open-Meteo REST  |  E1001 Native Hub");
-        int bat_pct = id(batt_percent).has_state() ? (int)id(batt_percent).state : 85;
-        it.printf(800 - margin_x, 435, id(font_body), c_fg, TextAlign::TOP_RIGHT, "Battery: %d%%", bat_pct);
       }
 
       // ============================================================================
@@ -925,42 +920,41 @@ display:
         };
 
         int start_y = 72;
-        int card_h = 104;
-        int gap = 14;
+        int card_h = 118;
+        int gap = 16;
 
         for (int i = 0; i < 3; i++) {
           int y = start_y + i * (card_h + gap);
           it.rectangle(margin_x, y, 800 - 2 * margin_x, card_h, c_fg);
 
           // Symbol (Font 24px) & Name (Font >= 18px)
-          it.printf(margin_x + 24, y + 22, id(font_title), c_fg, "%s", items[i].sym);
-          it.printf(margin_x + 24, y + 58, id(font_body), c_fg, "%s", items[i].name);
+          it.printf(margin_x + 24, y + 26, id(font_title), c_fg, "%s", items[i].sym);
+          it.printf(margin_x + 24, y + 64, id(font_body), c_fg, "%s", items[i].name);
 
-          // Price
+          // Price with comma separators for >= $1,000
           char p_buf[32];
-          if (items[i].price >= 1.0f) {
+          if (items[i].price >= 1000.0f) {
+            int thousands = (int)(items[i].price / 1000.0f);
+            float rem = items[i].price - (thousands * 1000.0f);
+            snprintf(p_buf, sizeof(p_buf), "$%d,%06.2f", thousands, rem);
+          } else if (items[i].price >= 1.0f) {
             snprintf(p_buf, sizeof(p_buf), "$%.2f", items[i].price);
           } else {
             snprintf(p_buf, sizeof(p_buf), "$%.4f", items[i].price);
           }
-          it.printf(520, y + 36, id(font_qlock), c_fg, TextAlign::TOP_RIGHT, "%s", p_buf);
+          it.printf(520, y + 42, id(font_qlock), c_fg, TextAlign::TOP_RIGHT, "%s", p_buf);
 
           // 24h Change Badge (Font >= 18px)
           bool is_pos = items[i].change >= 0;
           int badge_w = 120;
-          int badge_h = 42;
+          int badge_h = 44;
           int badge_x = 800 - margin_x - badge_w - 24;
-          int badge_y = y + 30;
+          int badge_y = y + 36;
 
           it.rectangle(badge_x, badge_y, badge_w, badge_h, c_fg);
-          it.printf(badge_x + badge_w / 2, badge_y + 10, id(font_body), c_fg, TextAlign::TOP_CENTER,
+          it.printf(badge_x + badge_w / 2, badge_y + 11, id(font_body), c_fg, TextAlign::TOP_CENTER,
                     "%s%.2f%%", is_pos ? "+" : "", items[i].change);
         }
-
-        // Footer Section (Font >= 18px)
-        it.printf(margin_x, 438, id(font_body), c_fg, "CoinMarketCap API  |  Seeed reTerminal E1001");
-        int bat_pct = id(batt_percent).has_state() ? (int)id(batt_percent).state : 85;
-        it.printf(800 - margin_x, 438, id(font_body), c_fg, TextAlign::TOP_RIGHT, "Battery: %d%%", bat_pct);
       }
 
       // ============================================================================

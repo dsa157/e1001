@@ -9,6 +9,8 @@
     "cycle_enabled": true,
     "default_dwell_seconds": 30,
     "active_palette_index": 0,
+    "time_format": 12,
+    "weather_units": "C",
     "global_seed": 1001
   },
   "modules": [
@@ -59,8 +61,18 @@
       "path": "modules/art1-test",
       "entry": "modules/art1-test/index.html",
       "port": 8005,
-      "enabled": true,
+      "enabled": false,
       "dwell_seconds": 20
+    },
+    {
+      "id": "art-241018a",
+      "name": "Modular Grid Art",
+      "description": "Generative modular arcs and lines for E1001 display (based on takawo)",
+      "path": "modules/art-241018a",
+      "entry": "modules/art-241018a/index.html",
+      "port": 8005,
+      "enabled": true,
+      "dwell_seconds": 30
     }
   ]
 }
