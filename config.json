@@ -35,6 +35,16 @@
       "dwell_seconds": 20
     },
     {
+      "id": "umlaut",
+      "name": "Umlaut Typographic Art",
+      "description": "Generative rotated umlaut typographic composition with DIFFERENCE blend mode (by dsa157.art)",
+      "path": "modules/art-umlaut",
+      "entry": "modules/art-umlaut/index.html",
+      "port": 8006,
+      "enabled": true,
+      "dwell_seconds": 30
+    },
+    {
       "id": "qlocktwo",
       "name": "Qlocktwo Word Clock",
       "description": "Typographic German/multilingual word clock with direct 1-bit image rendering endpoint",

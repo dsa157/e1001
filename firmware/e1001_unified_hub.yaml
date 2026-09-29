@@ -1,6 +1,6 @@
 # ============================================================================
 # Seeed reTerminal E1001 - Unified Native ESPHome Multi-Module Dashboard
-# Version: 2026.09.29.19.03.00
+# Version: 2026.09.29.19.15.00
 # Description: 100% Autonomous, on-device multi-module dashboard for Seeed E1001
 #              (ESP32-S3 + Waveshare 7.50in V2 800x480 e-paper display).
 #              Runs 100% standalone without any computer or host server.
@@ -156,7 +156,7 @@ globals:
     type: int
     initial_value: '3'
 
-  # Crypto Module Dynamic State
+  # Crypto Module Dynamic State (Supports up to 6 coins)
   - id: btc_price
     type: float
     initial_value: '84250.0'
@@ -169,12 +169,30 @@ globals:
   - id: eth_change_24h
     type: float
     initial_value: '3.05'
+  - id: sol_price
+    type: float
+    initial_value: '158.20'
+  - id: sol_change_24h
+    type: float
+    initial_value: '4.80'
   - id: ada_price
     type: float
     initial_value: '0.254'
   - id: ada_change_24h
     type: float
     initial_value: '4.64'
+  - id: bnb_price
+    type: float
+    initial_value: '585.50'
+  - id: bnb_change_24h
+    type: float
+    initial_value: '1.20'
+  - id: xrp_price
+    type: float
+    initial_value: '0.592'
+  - id: xrp_change_24h
+    type: float
+    initial_value: '-0.45'
 
 # ============================================================================
 # LOGGING & WI-FI SETUP
@@ -288,12 +306,12 @@ script:
                   then:
                     - component.update: eink_display
 
-  # Fetch Crypto Quotes from CoinMarketCap (with 8KB response buffer)
+  # Fetch Crypto Quotes from CoinMarketCap (up to 6 coins with 8KB response buffer)
   - id: fetch_crypto_script
     mode: restart
     then:
       - http_request.get:
-          url: "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=BTC,ETH,ADA"
+          url: "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=BTC,ETH,SOL,ADA,BNB,XRP"
           request_headers:
             X-CMC_PRO_API_KEY: !secret cmc_api_key
             Accept: "application/json"
@@ -315,17 +333,32 @@ script:
                         id(eth_price) = eth["price"].as<float>();
                         id(eth_change_24h) = eth["percent_change_24h"].as<float>();
                       }
+                      if (data["SOL"].is<JsonObject>()) {
+                        auto sol = data["SOL"]["quote"]["USD"];
+                        id(sol_price) = sol["price"].as<float>();
+                        id(sol_change_24h) = sol["percent_change_24h"].as<float>();
+                      }
                       if (data["ADA"].is<JsonObject>()) {
                         auto ada = data["ADA"]["quote"]["USD"];
                         id(ada_price) = ada["price"].as<float>();
                         id(ada_change_24h) = ada["percent_change_24h"].as<float>();
+                      }
+                      if (data["BNB"].is<JsonObject>()) {
+                        auto bnb = data["BNB"]["quote"]["USD"];
+                        id(bnb_price) = bnb["price"].as<float>();
+                        id(bnb_change_24h) = bnb["percent_change_24h"].as<float>();
+                      }
+                      if (data["XRP"].is<JsonObject>()) {
+                        auto xrp = data["XRP"]["quote"]["USD"];
+                        id(xrp_price) = xrp["price"].as<float>();
+                        id(xrp_change_24h) = xrp["percent_change_24h"].as<float>();
                       }
                     }
                     return true;
                   });
               - if:
                   condition:
-                    lambda: 'return id(active_module_index) == 2;'
+                    lambda: 'return id(active_module_index) == 1;'
                   then:
                     - component.update: eink_display
 
@@ -375,8 +408,8 @@ time:
       - seconds: 0
         then:
           - lambda: |-
-              // If auto-cycle is paused and showing QLOCKTWO word clock (Module 1), keep time accurate
-              if (!id(auto_cycle_enabled) && id(active_module_index) == 1) {
+              // If auto-cycle is paused and showing QLOCKTWO word clock (Module 3), keep time accurate
+              if (!id(auto_cycle_enabled) && id(active_module_index) == 3) {
                 id(eink_display).update();
               }
       # Periodic weather refresh every 15 minutes
@@ -398,7 +431,7 @@ interval:
     then:
       - lambda: |-
           if (id(auto_cycle_enabled)) {
-            id(active_module_index) = (id(active_module_index) + 1) % 4;
+            id(active_module_index) = (id(active_module_index) + 1) % 5;
             ESP_LOGI("AUTOCYCLE", "Autonomous cycle -> Active Module: %d", id(active_module_index));
             id(eink_display).update();
           }
@@ -445,7 +478,7 @@ binary_sensor:
     on_press:
       then:
         - lambda: |-
-            id(active_module_index) = (id(active_module_index) + 1) % 4;
+            id(active_module_index) = (id(active_module_index) + 1) % 5;
             ESP_LOGI("BUTTON", "Next button pressed -> Module: %d", id(active_module_index));
         - component.update: eink_display
 
@@ -459,7 +492,7 @@ binary_sensor:
     on_press:
       then:
         - lambda: |-
-            id(active_module_index) = (id(active_module_index) + 3) % 4;
+            id(active_module_index) = (id(active_module_index) + 4) % 5;
             ESP_LOGI("BUTTON", "Prev button pressed -> Module: %d", id(active_module_index));
         - component.update: eink_display
 
@@ -480,13 +513,16 @@ binary_sensor:
                 // Weather: Toggle °C / °F
                 id(use_fahrenheit) = !id(use_fahrenheit);
               } else if (cur == 1) {
-                // Qlocktwo: Cycle Language
-                id(qlock_lang_idx) = (id(qlock_lang_idx) + 1) % 6;
-              } else if (cur == 2) {
                 // Crypto: Toggle Invert Theme
                 id(dark_mode) = !id(dark_mode);
+              } else if (cur == 2) {
+                // Umlaut Art: Reseed
+                id(art_seed) = (int)(esp_random() % 100000) + 1;
               } else if (cur == 3) {
-                // Art: Reseed & Cycle Style
+                // Qlocktwo: Cycle Language
+                id(qlock_lang_idx) = (id(qlock_lang_idx) + 1) % 6;
+              } else if (cur == 4) {
+                // Modular Grid Art: Reseed & Cycle Style
                 id(art_design_idx) = (id(art_design_idx) + 1) % 3;
                 id(art_seed) = (int)(esp_random() % 100000) + 1;
               }
@@ -544,32 +580,42 @@ font:
   - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_huge
     size: 54
-    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$ëöäü"
 
   - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_large
     size: 40
-    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$ëöäü"
+
+  - file: "assets/fonts/Impact.ttf"
+    id: font_umlaut_impact
+    size: 160
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$ëöäü"
+
+  - file: "assets/fonts/Arial-Black.ttf"
+    id: font_umlaut_arial
+    size: 160
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$ëöäü"
 
   - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_qlock
     size: 28
-    glyphs: "0123456789° %/:-.,|'#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
+    glyphs: "0123456789° %/:-.,|'#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$ëöäü"
 
   - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_title
     size: 24
-    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$ëöäü"
 
   - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_subtitle
     size: 20
-    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$ëöäü"
 
   - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_body
     size: 18
-    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$ëöäü"
 
 # ============================================================================
 # E-INK DISPLAY DRIVER (WAVESHARE 7.50IN V2 - 800x480)
@@ -713,9 +759,233 @@ display:
       }
 
       // ============================================================================
-      // MODULE 1: AUTHENTIC NATIVE QLOCKTWO WORD CLOCK (1:1 Standalone Parity)
+      // MODULE 1: NATIVE CRYPTO ASSET DASHBOARD (Dynamic Responsive Layout 1-6 Coins)
       // ============================================================================
       else if (mod == 1) {
+        int margin_x = 20;
+
+        // Top Header (Left: Title matching time font_large 40px)
+        it.printf(margin_x, 14, id(font_large), c_fg, "CRYPTO ASSET MARKET");
+
+        // Top Header (Right: Live Clock & Date matching Weather Header)
+        char time_str[16];
+        if (id(use_24h_time)) {
+          snprintf(time_str, sizeof(time_str), "%02d:%02d", cur_hour, cur_min);
+        } else {
+          int h12 = cur_hour % 12;
+          if (h12 == 0) h12 = 12;
+          snprintf(time_str, sizeof(time_str), "%d:%02d %s", h12, cur_min, cur_hour >= 12 ? "PM" : "AM");
+        }
+        it.printf(800 - margin_x, 14, id(font_large), c_fg, TextAlign::TOP_RIGHT, "%s", time_str);
+
+        static const char* days_full[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+        static const char* months_full[] = {"", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+        int d_idx = (cur_day_of_week >= 1 && cur_day_of_week <= 7) ? (cur_day_of_week - 1) : 0;
+        int m_idx = (cur_month >= 1 && cur_month <= 12) ? cur_month : 1;
+        it.printf(800 - margin_x, 68, id(font_subtitle), c_fg, TextAlign::TOP_RIGHT, "%s, %s %d", days_full[d_idx], months_full[m_idx], cur_day);
+
+        // Crypto Asset Items (Supports up to 6 coins)
+        struct CryptoItem {
+          const char* sym;
+          const char* name;
+          float price;
+          float change;
+        };
+
+        CryptoItem all_items[6] = {
+          {"BTC", "Bitcoin", id(btc_price), id(btc_change_24h)},
+          {"ETH", "Ethereum", id(eth_price), id(eth_change_24h)},
+          {"SOL", "Solana", id(sol_price), id(sol_change_24h)},
+          {"ADA", "Cardano", id(ada_price), id(ada_change_24h)},
+          {"BNB", "BNB", id(bnb_price), id(bnb_change_24h)},
+          {"XRP", "XRP", id(xrp_price), id(xrp_change_24h)}
+        };
+        int num_items = 6;
+
+        if (num_items <= 3) {
+          // 1 Column Layout (Full Width Cards)
+          int start_y = 104;
+          int card_h = 108;
+          int gap = 14;
+
+          for (int i = 0; i < num_items; i++) {
+            int y = start_y + i * (card_h + gap);
+            it.rectangle(margin_x, y, 800 - 2 * margin_x, card_h, c_fg);
+
+            // Symbol (Font 24px) & Name (Font >= 18px)
+            it.printf(margin_x + 24, y + 22, id(font_title), c_fg, "%s", all_items[i].sym);
+            it.printf(margin_x + 24, y + 62, id(font_body), c_fg, "%s", all_items[i].name);
+
+            // Price with single dollar sign and comma separators
+            char p_buf[32];
+            if (all_items[i].price >= 1000.0f) {
+              int thousands = (int)(all_items[i].price / 1000.0f);
+              float rem = all_items[i].price - (thousands * 1000.0f);
+              snprintf(p_buf, sizeof(p_buf), "$%d,%06.2f", thousands, rem);
+            } else if (all_items[i].price >= 1.0f) {
+              snprintf(p_buf, sizeof(p_buf), "$%.2f", all_items[i].price);
+            } else {
+              snprintf(p_buf, sizeof(p_buf), "$%.4f", all_items[i].price);
+            }
+            it.printf(520, y + 38, id(font_qlock), c_fg, TextAlign::TOP_RIGHT, "%s", p_buf);
+
+            // 24h Change Badge (Font >= 18px)
+            bool is_pos = all_items[i].change >= 0;
+            int badge_w = 120;
+            int badge_h = 44;
+            int badge_x = 800 - margin_x - badge_w - 24;
+            int badge_y = y + 32;
+
+            it.rectangle(badge_x, badge_y, badge_w, badge_h, c_fg);
+            it.printf(badge_x + badge_w / 2, badge_y + 11, id(font_body), c_fg, TextAlign::TOP_CENTER,
+                      "%s%.2f%%", is_pos ? "+" : "", all_items[i].change);
+          }
+        } else {
+          // 2 Column Grid Layout (4..6 Coins)
+          int start_y = 104;
+          int card_w = 372;
+          int card_h = 110;
+          int gap_x = 16;
+          int gap_y = 12;
+
+          for (int i = 0; i < num_items && i < 6; i++) {
+            int col = i / 3;
+            int row = i % 3;
+            int card_x = margin_x + col * (card_w + gap_x);
+            int card_y = start_y + row * (card_h + gap_y);
+
+            it.rectangle(card_x, card_y, card_w, card_h, c_fg);
+
+            // Symbol (Font 24px) & Name (Font >= 18px)
+            it.printf(card_x + 16, card_y + 16, id(font_title), c_fg, "%s", all_items[i].sym);
+            it.printf(card_x + 16, card_y + 56, id(font_body), c_fg, "%s", all_items[i].name);
+
+            // Price (Font 20px / font_subtitle)
+            char p_buf[32];
+            if (all_items[i].price >= 1000.0f) {
+              int thousands = (int)(all_items[i].price / 1000.0f);
+              float rem = all_items[i].price - (thousands * 1000.0f);
+              snprintf(p_buf, sizeof(p_buf), "$%d,%06.2f", thousands, rem);
+            } else if (all_items[i].price >= 1.0f) {
+              snprintf(p_buf, sizeof(p_buf), "$%.2f", all_items[i].price);
+            } else {
+              snprintf(p_buf, sizeof(p_buf), "$%.4f", all_items[i].price);
+            }
+            it.printf(card_x + card_w - 16, card_y + 16, id(font_subtitle), c_fg, TextAlign::TOP_RIGHT, "%s", p_buf);
+
+            // 24h Change Badge (Font >= 18px)
+            bool is_pos = all_items[i].change >= 0;
+            int bw = 100;
+            int bh = 36;
+            int bx = card_x + card_w - bw - 16;
+            int by = card_y + 58;
+
+            it.rectangle(bx, by, bw, bh, c_fg);
+            it.printf(bx + bw / 2, by + 8, id(font_body), c_fg, TextAlign::TOP_CENTER,
+                      "%s%.2f%%", is_pos ? "+" : "", all_items[i].change);
+          }
+        }
+      }
+
+      // ============================================================================
+      // MODULE 2: UMLAUT TYPOGRAPHIC ART (dsa157.art - Native Rotated XOR Renderer)
+      // ============================================================================
+      else if (mod == 2) {
+        // Direct Framebuffer Accessor for Bitwise XOR
+        struct EPBufferAccessor : public esphome::display::DisplayBuffer {
+          static uint8_t *get_buf(esphome::display::Display *d) {
+            return ((EPBufferAccessor *)(esphome::display::DisplayBuffer *)d)->buffer_;
+          }
+        };
+        uint8_t *ep_buf = EPBufferAccessor::get_buf(&it);
+
+        // Helper lambda: Draws 1-bit rotated glyph with bitwise XOR directly onto buffer
+        auto draw_rotated_glyph_xor = [ep_buf](esphome::font::Font *fnt, uint32_t cp, int center_x, int center_y, float angle_deg) {
+          if (ep_buf == nullptr) return;
+          const auto *glyph = fnt->find_glyph(cp);
+          if (!glyph || glyph->data == nullptr) return;
+          int gw = glyph->width;
+          int gh = glyph->height;
+          if (gw <= 0 || gh <= 0) return;
+
+          float rad = angle_deg * (float)(M_PI / 180.0f);
+          float cos_a = cosf(rad);
+          float sin_a = sinf(rad);
+          float half_w = (float)gw / 2.0f;
+          float half_h = (float)gh / 2.0f;
+
+          const uint8_t *data = glyph->data;
+          uint8_t mask = 0;
+          uint8_t byte = 0;
+
+          for (int gy = 0; gy < gh; gy++) {
+            for (int gx = 0; gx < gw; gx++) {
+              if (mask == 0) {
+                mask = 0x80;
+                byte = *data++;
+              }
+              bool is_on = (byte & mask) != 0;
+              mask >>= 1;
+
+              if (is_on) {
+                float rx = (float)gx - half_w;
+                float ry = (float)gy - half_h;
+                int px = center_x + (int)roundf(rx * cos_a - ry * sin_a);
+                int py = center_y + (int)roundf(rx * sin_a + ry * cos_a);
+
+                if (px >= 0 && px < 800 && py >= 0 && py < 480) {
+                  uint32_t pos = (px + py * 800) / 8;
+                  uint8_t pmask = 0x80 >> (px & 7);
+                  ep_buf[pos] ^= pmask;
+                }
+              }
+            }
+          }
+        };
+
+        // Dynamic Seed: Uses current live RTC/SNTP timestamp and second count every display cycle
+        uint32_t current_seed = (uint32_t)time_now.timestamp;
+        if (current_seed == 0) {
+          current_seed = (uint32_t)(cur_hour * 3600 + cur_min * 60 + time_now.second + 1001) ^ (uint32_t)millis();
+        }
+        current_seed ^= (uint32_t)id(art_seed);
+        uint32_t rng_state = current_seed;
+        auto next_rand = [&rng_state]() -> float {
+          rng_state = rng_state * 1664525u + 1013904223u;
+          return (float)(rng_state & 0x7FFFFFFF) / 2147483647.0f;
+        };
+        auto rand_int = [&next_rand](int min_val, int max_val) -> int {
+          return min_val + (int)(next_rand() * (float)(max_val - min_val + 1));
+        };
+
+        const int x_spacing = 80;
+        const int y_spacing = 80;
+        const int cols = 800 / x_spacing; // 10
+        const int rows = 480 / y_spacing; // 6
+        const int margin_x = (800 - (cols * x_spacing)) / 2 + (x_spacing / 2);
+        const int margin_y = (480 - (rows * y_spacing)) / 2 + (y_spacing / 2);
+
+        // Unicode codepoints for: 'ë', 'ö', 'ä', 'ü'
+        static const uint32_t umlaut_cps[4] = {0x00EB, 0x00F6, 0x00E4, 0x00FC};
+        bool use_impact = (rand_int(0, 1) == 0);
+        auto active_font = use_impact ? id(font_umlaut_impact) : id(font_umlaut_arial);
+
+        for (int r = 0; r < rows; r++) {
+          for (int c = 0; c < cols; c++) {
+            int cx = margin_x + (c * x_spacing);
+            int cy = margin_y + (r * y_spacing);
+            int l_idx = rand_int(0, 3);
+            float angle = next_rand() * 360.0f;
+
+            draw_rotated_glyph_xor(active_font, umlaut_cps[l_idx], cx, cy, angle);
+          }
+        }
+      }
+
+      // ============================================================================
+      // MODULE 3: AUTHENTIC NATIVE QLOCKTWO WORD CLOCK (1:1 Standalone Parity)
+      // ============================================================================
+      else if (mod == 3) {
         struct QLang {
           const char* name;
           int offset;
@@ -920,89 +1190,15 @@ display:
       }
 
       // ============================================================================
-      // MODULE 2: NATIVE CRYPTO ASSET DASHBOARD (Title & Matching Clock/Date Header)
+      // MODULE 4: MODULAR GRID GENERATIVE ART (art-241018a by takawo)
       // ============================================================================
-      else if (mod == 2) {
-        int margin_x = 20;
-
-        // Top Header (Left: Title matching time font_large 40px)
-        it.printf(margin_x, 14, id(font_large), c_fg, "CRYPTO ASSET MARKET");
-
-        // Top Header (Right: Live Clock & Date matching Weather Header)
-        char time_str[16];
-        if (id(use_24h_time)) {
-          snprintf(time_str, sizeof(time_str), "%02d:%02d", cur_hour, cur_min);
-        } else {
-          int h12 = cur_hour % 12;
-          if (h12 == 0) h12 = 12;
-          snprintf(time_str, sizeof(time_str), "%d:%02d %s", h12, cur_min, cur_hour >= 12 ? "PM" : "AM");
+      else if (mod == 4) {
+        // Dynamic Seed: Uses current live RTC/SNTP timestamp and second count every display cycle
+        uint32_t current_seed = (uint32_t)time_now.timestamp;
+        if (current_seed == 0) {
+          current_seed = (uint32_t)(cur_hour * 3600 + cur_min * 60 + time_now.second + 1001) ^ (uint32_t)millis();
         }
-        it.printf(800 - margin_x, 14, id(font_large), c_fg, TextAlign::TOP_RIGHT, "%s", time_str);
-
-        static const char* days_full[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-        static const char* months_full[] = {"", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-        int d_idx = (cur_day_of_week >= 1 && cur_day_of_week <= 7) ? (cur_day_of_week - 1) : 0;
-        int m_idx = (cur_month >= 1 && cur_month <= 12) ? cur_month : 1;
-        it.printf(800 - margin_x, 68, id(font_subtitle), c_fg, TextAlign::TOP_RIGHT, "%s, %s %d", days_full[d_idx], months_full[m_idx], cur_day);
-
-        // Crypto Asset Cards (BTC, ETH, ADA) - No line under header
-        struct CryptoItem {
-          const char* sym;
-          const char* name;
-          float price;
-          float change;
-        };
-
-        CryptoItem items[3] = {
-          {"BTC", "Bitcoin", id(btc_price), id(btc_change_24h)},
-          {"ETH", "Ethereum", id(eth_price), id(eth_change_24h)},
-          {"ADA", "Cardano", id(ada_price), id(ada_change_24h)}
-        };
-
-        int start_y = 104;
-        int card_h = 108;
-        int gap = 14;
-
-        for (int i = 0; i < 3; i++) {
-          int y = start_y + i * (card_h + gap);
-          it.rectangle(margin_x, y, 800 - 2 * margin_x, card_h, c_fg);
-
-          // Symbol (Font 24px) & Name (Font >= 18px)
-          it.printf(margin_x + 24, y + 22, id(font_title), c_fg, "%s", items[i].sym);
-          it.printf(margin_x + 24, y + 62, id(font_body), c_fg, "%s", items[i].name);
-
-          // Price with single dollar sign and comma separators for >= 1000 USD
-          char p_buf[32];
-          if (items[i].price >= 1000.0f) {
-            int thousands = (int)(items[i].price / 1000.0f);
-            float rem = items[i].price - (thousands * 1000.0f);
-            snprintf(p_buf, sizeof(p_buf), "$%d,%06.2f", thousands, rem);
-          } else if (items[i].price >= 1.0f) {
-            snprintf(p_buf, sizeof(p_buf), "$%.2f", items[i].price);
-          } else {
-            snprintf(p_buf, sizeof(p_buf), "$%.4f", items[i].price);
-          }
-          it.printf(520, y + 38, id(font_qlock), c_fg, TextAlign::TOP_RIGHT, "%s", p_buf);
-
-          // 24h Change Badge (Font >= 18px)
-          bool is_pos = items[i].change >= 0;
-          int badge_w = 120;
-          int badge_h = 44;
-          int badge_x = 800 - margin_x - badge_w - 24;
-          int badge_y = y + 32;
-
-          it.rectangle(badge_x, badge_y, badge_w, badge_h, c_fg);
-          it.printf(badge_x + badge_w / 2, badge_y + 11, id(font_body), c_fg, TextAlign::TOP_CENTER,
-                    "%s%.2f%%", is_pos ? "+" : "", items[i].change);
-        }
-      }
-
-      // ============================================================================
-      // MODULE 3: MODULAR GRID GENERATIVE ART (art-241018a by takawo)
-      // ============================================================================
-      else if (mod == 3) {
-        uint32_t rng_state = (uint32_t)id(art_seed);
-        if (rng_state == 0) rng_state = 1001;
+        uint32_t rng_state = current_seed;
         auto next_rand = [&rng_state]() -> float {
           rng_state = rng_state * 1664525u + 1013904223u;
           return (float)(rng_state & 0x7FFFFFFF) / 2147483647.0f;
@@ -1032,13 +1228,24 @@ display:
         int mg_x = (canvas_w - total_x * cell_size) / 2;
         int mg_y = (canvas_h - total_y * cell_size) / 2;
 
+        // Doubled line weight: 3px-4px bold strokes for crisp e-ink rendering
+        auto draw_thick_line = [&it, c_fg](int x0, int y0, int x1, int y1) {
+          it.line(x0, y0, x1, y1, c_fg);
+          it.line(x0 + 1, y0 + 1, x1 + 1, y1, c_fg);
+          it.line(x0, y0 + 1, x1, y1 + 1, c_fg);
+          it.line(x0 - 1, y0 - 1, x1 - 1, y1, c_fg);
+          it.line(x0, y0 - 1, x1, y1 - 1, c_fg);
+          it.line(x0 + 1, y0 + 1, x1 + 1, y1 + 1, c_fg);
+          it.line(x0 - 1, y0 - 1, x1 - 1, y1 - 1, c_fg);
+        };
+
         for (int i = 0; i < total_x; i++) {
           for (int j = 0; j < total_y; j++) {
             int top_left_x = i * cell_size + mg_x;
             int top_left_y = j * cell_size + mg_y;
 
             if (next_rand() < arc_prob) {
-              // Concentric Arc Module
+              // Concentric Arc Module with Doubled Bold Stroke Weight
               int center_corner = rand_int(0, 3);
               int cx = (center_corner % 3 == 0) ? top_left_x : (top_left_x + cell_size);
               int cy = (center_corner < 2) ? top_left_y : (top_left_y + cell_size);
@@ -1046,24 +1253,29 @@ display:
 
               for (int ring = concentric_rings; ring >= 1; ring--) {
                 float scl = (float)ring / (float)concentric_rings;
-                float r = (float)cell_size * scl;
-                int segments = 12;
-                int prev_px = 0, prev_py = 0;
-                for (int s = 0; s <= segments; s++) {
-                  float theta = begin_rad + ((float)(M_PI / 2.0) * ((float)s / (float)segments));
-                  int px = cx + (int)(cosf(theta) * r);
-                  int py = cy + (int)(sinf(theta) * r);
-                  if (px >= 0 && px < 800 && py >= 0 && py < 480) {
-                    if (s > 0) {
-                      it.line(prev_px, prev_py, px, py, c_fg);
+                float r_base = (float)cell_size * scl;
+                int segments = 16;
+                // Draw multi-radius passes (-1.5px to +1.5px) for bold doubled arc lines
+                for (float r_offset = -1.5f; r_offset <= 1.5f; r_offset += 0.75f) {
+                  float r = r_base + r_offset;
+                  if (r < 1.0f) continue;
+                  int prev_px = 0, prev_py = 0;
+                  for (int s = 0; s <= segments; s++) {
+                    float theta = begin_rad + ((float)(M_PI / 2.0) * ((float)s / (float)segments));
+                    int px = cx + (int)(cosf(theta) * r);
+                    int py = cy + (int)(sinf(theta) * r);
+                    if (px >= 0 && px < 800 && py >= 0 && py < 480) {
+                      if (s > 0) {
+                        it.line(prev_px, prev_py, px, py, c_fg);
+                      }
+                      prev_px = px;
+                      prev_py = py;
                     }
-                    prev_px = px;
-                    prev_py = py;
                   }
                 }
               }
             } else {
-              // Diagonal / Segmented Line Module
+              // Diagonal / Segmented Line Module with Doubled Bold Stroke Weight
               int begin_idx = rand_int(0, 3);
               int end_offset = rand_int(1, 3);
               int end_idx = (begin_idx + end_offset) % 4;
@@ -1080,7 +1292,7 @@ display:
               int x2 = get_corner_x(end_idx);
               int y2 = get_corner_y(end_idx);
 
-              it.line(x1, y1, x2, y2, c_fg);
+              draw_thick_line(x1, y1, x2, y2);
             }
           }
         }

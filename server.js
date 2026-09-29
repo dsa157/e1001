@@ -26,6 +26,7 @@ const { renderWeather } = require('./lib/renderers/weatherRenderer');
 const { renderCrypto } = require('./lib/renderers/cryptoRenderer');
 const { renderArt1 } = require('./lib/renderers/art1Renderer');
 const { renderArt241018a } = require('./lib/renderers/art241018aRenderer');
+const { renderUmlaut } = require('./lib/renderers/umlautRenderer');
 const { renderTasks } = require('./lib/renderers/tasksRenderer');
 const { to1BitPng } = require('./lib/png1bit');
 
@@ -204,6 +205,12 @@ app.get('/api/screen.png', async (req, res) => {
       const state = moduleActionStates['art-241018a'] || {};
       buffer = await renderArt241018a({
         seed: state.seed || seed,
+        paletteIndex
+      });
+    } else if (moduleId === 'umlaut') {
+      const state = moduleActionStates['umlaut'] || {};
+      buffer = await renderUmlaut({
+        seed: state.seed || Date.now(),
         paletteIndex
       });
     } else if (moduleId === 'art1-test') {
