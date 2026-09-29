@@ -10,6 +10,7 @@ Parent repository and shared infrastructure for **Seeed Studio reTerminal E1001*
   - `e1001-style.css`: Unified e-paper bezel container, glassmorphism toolbar, and responsive typography.
 - `firmware/`: Shared ESPHome templates and drivers for flashing to the E1001 device (GPIO3, GPIO4, GPIO5 buttons, SPI bus configuration, UC8179 controller).
 - `art1-test/`: Generative art project with 3 aspect-fitted borderless designs.
+- `weather/`: E-Ink Weather Dashboard with Open-Meteo API integration.
 
 ---
 

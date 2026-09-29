@@ -1,0 +1,534 @@
+# ============================================================================
+# Seeed reTerminal E1001 Crypto Dashboard - ESPHome Configuration
+# Version: 2026.09.22.11.24.00
+# Description: High-contrast e-paper crypto dashboard for Seeed E1001 (800x480).
+#              - Strictly Roboto Bold typography for all text elements
+#              - Official CoinMarketCap Pro REST API integration
+#              - Rounded card boxes (radius 16) matching weather dashboard
+#              - Clean time display without seconds (12h/24h)
+#              - Smart price formatting: commas and no cents over $1,000
+#              - Real hardware battery voltage ADC (GPIO1) via GPIO21 enable pin
+#              - Physical buttons (GPIO4: 12h/24h, GPIO5: Invert Theme, GPIO3: Refresh)
+# ============================================================================
+
+substitutions:
+  name: "seeed-reterminal-e1001-crypto"
+  friendly_name: "Seeed E1001 Crypto Dashboard"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  on_boot:
+    priority: 800
+    then:
+      - output.turn_on: sd_cs_pin
+      - output.turn_off: sd_en_pin
+      - output.turn_on: batt_en_pin
+      - delay: 500ms
+      - component.update: batt_voltage
+      - delay: 200ms
+      - component.update: eink_display
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+# Top-level dynamic state globals
+globals:
+  - id: use_24h_time
+    type: bool
+    restore_value: true
+    initial_value: 'false'
+  - id: invert_theme
+    type: bool
+    restore_value: true
+    initial_value: 'false'
+  
+  # BTC Metrics
+  - id: btc_price
+    type: float
+    initial_value: '85495.0'
+  - id: btc_change_24h
+    type: float
+    initial_value: '4.94'
+  - id: btc_volume_m
+    type: float
+    initial_value: '58777.0'
+  - id: btc_mcap_b
+    type: float
+    initial_value: '1717.4'
+
+  # ETH Metrics
+  - id: eth_price
+    type: float
+    initial_value: '2733.0'
+  - id: eth_change_24h
+    type: float
+    initial_value: '2.55'
+  - id: eth_volume_m
+    type: float
+    initial_value: '25032.0'
+  - id: eth_mcap_b
+    type: float
+    initial_value: '333.6'
+
+  # ADA Metrics
+  - id: ada_price
+    type: float
+    initial_value: '0.2468'
+  - id: ada_change_24h
+    type: float
+    initial_value: '6.36'
+  - id: ada_volume_m
+    type: float
+    initial_value: '940.2'
+  - id: ada_mcap_b
+    type: float
+    initial_value: '9.08'
+
+logger:
+  hardware_uart: UART0
+  baud_rate: 115200
+
+# Wi-Fi configuration with fallback AP
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "E1001-Crypto-Fallback"
+  on_connect:
+    then:
+      - delay: 1s
+      - script.execute: fetch_crypto_script
+
+http_request:
+  id: http_client
+  verify_ssl: false
+  timeout: 15s
+
+script:
+  - id: fetch_crypto_script
+    mode: restart
+    then:
+      - http_request.get:
+          url: "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=BTC,ETH,ADA"
+          request_headers:
+            X-CMC_PRO_API_KEY: !secret cmc_api_key
+            Accept: "application/json"
+          capture_response: true
+          on_response:
+            then:
+              - lambda: |-
+                  json::parse_json(body, [](JsonObject doc) {
+                    if (doc["data"].is<JsonObject>()) {
+                      auto data = doc["data"];
+                      if (data["BTC"].is<JsonObject>()) {
+                        auto btc = data["BTC"]["quote"]["USD"];
+                        id(btc_price) = btc["price"].as<float>();
+                        id(btc_change_24h) = btc["percent_change_24h"].as<float>();
+                        id(btc_volume_m) = btc["volume_24h"].as<float>() / 1000000.0f;
+                        id(btc_mcap_b) = btc["market_cap"].as<float>() / 1000000000.0f;
+                      }
+                      if (data["ETH"].is<JsonObject>()) {
+                        auto eth = data["ETH"]["quote"]["USD"];
+                        id(eth_price) = eth["price"].as<float>();
+                        id(eth_change_24h) = eth["percent_change_24h"].as<float>();
+                        id(eth_volume_m) = eth["volume_24h"].as<float>() / 1000000.0f;
+                        id(eth_mcap_b) = eth["market_cap"].as<float>() / 1000000000.0f;
+                      }
+                      if (data["ADA"].is<JsonObject>()) {
+                        auto ada = data["ADA"]["quote"]["USD"];
+                        id(ada_price) = ada["price"].as<float>();
+                        id(ada_change_24h) = ada["percent_change_24h"].as<float>();
+                        id(ada_volume_m) = ada["volume_24h"].as<float>() / 1000000.0f;
+                        id(ada_mcap_b) = ada["market_cap"].as<float>() / 1000000000.0f;
+                      }
+                    }
+                    return true;
+                  });
+              - component.update: eink_display
+
+captive_portal:
+
+# Hardware Pins: SD isolation & Battery Enable (GPIO21)
+output:
+  - platform: gpio
+    pin: GPIO14
+    id: sd_cs_pin
+  - platform: gpio
+    pin: GPIO16
+    id: sd_en_pin
+  - platform: gpio
+    pin: GPIO21
+    id: batt_en_pin
+
+# Real Battery Voltage and Percentage Sensor (GPIO1 ADC + GPIO21 Enable)
+sensor:
+  - platform: adc
+    pin: GPIO1
+    name: "Battery Voltage"
+    id: batt_voltage
+    update_interval: 10s
+    attenuation: 12db
+    filters:
+      - multiply: 2.0
+
+  - platform: template
+    name: "Battery Percentage"
+    id: batt_percent
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    device_class: battery
+    update_interval: 10s
+    lambda: |-
+      if (!id(batt_voltage).has_state()) return 88.0f;
+      float v = id(batt_voltage).state;
+      if (isnan(v) || v <= 0.2f) return 88.0f;
+      if (v < 2.5f) v = v * 2.0f;
+      if (v >= 4.15f) return 100.0f;
+      if (v <= 3.30f) return 5.0f;
+      float pct = ((v - 3.30f) / (4.15f - 3.30f)) * 100.0f;
+      return (float)std::max(5.0f, std::min(100.0f, pct));
+
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: "Asia/Bangkok"
+    on_time_sync:
+      then:
+        - delay: 1s
+        - component.update: eink_display
+    on_time:
+      # Top of the minute clock update (:00s)
+      - seconds: 0
+        then:
+          - component.update: eink_display
+      # Every 5 minutes refresh crypto prices (:00s at 0, 5, 10...)
+      - minutes: "/5"
+        seconds: 15
+        then:
+          - script.execute: fetch_crypto_script
+
+# Hardware Push Buttons on E1001 (Active LOW with internal pull-up)
+binary_sensor:
+  # Next Button (GPIO4): Toggle 12-Hour / 24-Hour clock format
+  - platform: gpio
+    pin:
+      number: GPIO4
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Time Format Toggle"
+    on_press:
+      then:
+        - lambda: |-
+            id(use_24h_time) = !id(use_24h_time);
+        - component.update: eink_display
+
+  # Prev Button (GPIO5): Toggle Invert Theme
+  - platform: gpio
+    pin:
+      number: GPIO5
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Theme Toggle"
+    on_press:
+      then:
+        - lambda: |-
+            id(invert_theme) = !id(invert_theme);
+        - component.update: eink_display
+
+  # Action Button (GPIO3): Force Refresh Data
+  - platform: gpio
+    pin:
+      number: GPIO3
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Force Refresh Button"
+    on_press:
+      then:
+        - script.execute: fetch_crypto_script
+
+spi:
+  clk_pin: GPIO7
+  mosi_pin: GPIO9
+
+# Roboto Bold Fonts exclusively
+font:
+  - file: "../common/fonts/Roboto-Bold.ttf"
+    id: font_header_title
+    size: 20
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+$"
+
+  - file: "../common/fonts/Roboto-Bold.ttf"
+    id: font_header_clock
+    size: 24
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+$"
+
+  - file: "../common/fonts/Roboto-Bold.ttf"
+    id: font_symbol
+    size: 24
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+$"
+
+  - file: "../common/fonts/Roboto-Bold.ttf"
+    id: font_price_hero
+    size: 28
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+$"
+
+  - file: "../common/fonts/Roboto-Bold.ttf"
+    id: font_card_sub
+    size: 13
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+$"
+
+  - file: "../common/fonts/Roboto-Bold.ttf"
+    id: font_metric_val
+    size: 12
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+$"
+
+  - file: "../common/fonts/Roboto-Bold.ttf"
+    id: font_metric_label
+    size: 11
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+$"
+
+  - file: "../common/fonts/Roboto-Bold.ttf"
+    id: font_footer
+    size: 12
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+$"
+
+# E-Ink Display Driver (Waveshare 7.50inv2 - 800x480)
+display:
+  - platform: waveshare_epaper
+    id: eink_display
+    cs_pin: GPIO10
+    dc_pin: GPIO11
+    reset_pin: GPIO12
+    busy_pin:
+      number: GPIO13
+      inverted: true
+    model: 7.50inv2
+    update_interval: 300s
+    rotation: 0
+    lambda: |-
+      Color COLOR_BG = id(invert_theme) ? COLOR_ON : COLOR_OFF;
+      Color COLOR_FG = id(invert_theme) ? COLOR_OFF : COLOR_ON;
+
+      it.fill(COLOR_BG);
+
+      int margin_x = 14;
+
+      // ============================================================================
+      // 1. HEADER SECTION (CRYPTO MARKET, BTC DOM, LIVE CLOCK & DATE)
+      // ============================================================================
+      it.printf(margin_x, 12, id(font_header_title), COLOR_FG, "CRYPTO MARKET");
+      it.printf(margin_x, 38, id(font_card_sub), COLOR_FG, "BTC DOM: 59.1%%  |  COINMARKETCAP");
+
+      // Header Time (Without Seconds) & Date
+      auto time_now = id(sntp_time).now();
+      int cur_hour = time_now.hour;
+      int cur_min = time_now.minute;
+      int cur_day = time_now.day_of_month;
+      int cur_month = time_now.month;
+      int cur_year = time_now.year;
+      int cur_dow = time_now.day_of_week; // 1=Sunday
+
+      const char* day_names[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+      const char* month_names[] = {"", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+
+      char time_buf[32];
+      if (id(use_24h_time)) {
+        snprintf(time_buf, sizeof(time_buf), "%02d:%02d", cur_hour, cur_min);
+      } else {
+        int display_hour = cur_hour % 12;
+        if (display_hour == 0) display_hour = 12;
+        const char* ampm = cur_hour >= 12 ? "PM" : "AM";
+        snprintf(time_buf, sizeof(time_buf), "%d:%02d %s", display_hour, cur_min, ampm);
+      }
+
+      it.printf(800 - margin_x, 10, id(font_header_clock), COLOR_FG, TextAlign::TOP_RIGHT, "%s", time_buf);
+      
+      const char* cur_day_str = (cur_dow >= 1 && cur_dow <= 7) ? day_names[cur_dow - 1] : "Tuesday";
+      const char* cur_month_str = (cur_month >= 1 && cur_month <= 12) ? month_names[cur_month] : "Sep";
+      it.printf(800 - margin_x, 38, id(font_card_sub), COLOR_FG, TextAlign::TOP_RIGHT, "%s, %s %d, %d", cur_day_str, cur_month_str, cur_day, cur_year);
+
+      // Header Divider Line
+      it.line(margin_x, 65, 800 - margin_x, 65, COLOR_FG);
+      it.line(margin_x, 66, 800 - margin_x, 66, COLOR_FG);
+
+      // ============================================================================
+      // 2. BODY SECTION (3 DYNAMIC CRYPTO CARDS FOR BTC, ETH, ADA)
+      // Rounded Card Drawing Helper (Radius 16 matching weather dashboard)
+      // ============================================================================
+      int body_y = 75;
+      int body_h = 350;
+      int total_w = 800 - (margin_x * 2);
+      int gap = 12;
+      int card_w = (total_w - (gap * 2)) / 3;
+      int card_radius = 16;
+
+      auto draw_rounded_rect = [&](int rx, int ry, int rw, int rh, int rad, Color col) {
+        it.line(rx + rad, ry, rx + rw - rad, ry, col);
+        it.line(rx + rad, ry + rh, rx + rw - rad, ry + rh, col);
+        it.line(rx, ry + rad, rx, ry + rh - rad, col);
+        it.line(rx + rw, ry + rad, rx + rw, ry + rh - rad, col);
+        int f = 1 - rad;
+        int ddF_x = 1;
+        int ddF_y = -2 * rad;
+        int x_c = 0;
+        int y_c = rad;
+        while (x_c < y_c) {
+          if (f >= 0) {
+            y_c--;
+            ddF_y += 2;
+            f += ddF_y;
+          }
+          x_c++;
+          ddF_x += 2;
+          f += ddF_x;
+          // Quadrant 1 (Top-Right): rx+rw-rad, ry+rad
+          it.draw_pixel_at(rx + rw - rad + x_c, ry + rad - y_c, col);
+          it.draw_pixel_at(rx + rw - rad + y_c, ry + rad - x_c, col);
+          // Quadrant 2 (Top-Left): rx+rad, ry+rad
+          it.draw_pixel_at(rx + rad - x_c, ry + rad - y_c, col);
+          it.draw_pixel_at(rx + rad - y_c, ry + rad - x_c, col);
+          // Quadrant 3 (Bottom-Left): rx+rad, ry+rh-rad
+          it.draw_pixel_at(rx + rad - x_c, ry + rh - rad + y_c, col);
+          it.draw_pixel_at(rx + rad - y_c, ry + rh - rad + x_c, col);
+          // Quadrant 4 (Bottom-Right): rx+rw-rad, ry+rh-rad
+          it.draw_pixel_at(rx + rw - rad + x_c, ry + rh - rad + y_c, col);
+          it.draw_pixel_at(rx + rw - rad + y_c, ry + rh - rad + x_c, col);
+        }
+        it.draw_pixel_at(rx + rw - rad, ry, col);
+        it.draw_pixel_at(rx + rw, ry + rad, col);
+        it.draw_pixel_at(rx + rad, ry, col);
+        it.draw_pixel_at(rx, ry + rad, col);
+        it.draw_pixel_at(rx + rad, ry + rh, col);
+        it.draw_pixel_at(rx, ry + rh - rad, col);
+        it.draw_pixel_at(rx + rw - rad, ry + rh, col);
+        it.draw_pixel_at(rx + rw, ry + rh - rad, col);
+      };
+
+      const char* symbols[] = {"BTC", "ETH", "ADA"};
+      const char* names[] = {"Bitcoin", "Ethereum", "Cardano"};
+      const char* ranks[] = {"#1", "#2", "#14"};
+      float prices[] = {id(btc_price), id(eth_price), id(ada_price)};
+      float changes[] = {id(btc_change_24h), id(eth_change_24h), id(ada_change_24h)};
+      float volumes[] = {id(btc_volume_m), id(eth_volume_m), id(ada_volume_m)};
+      float mcaps[] = {id(btc_mcap_b), id(eth_mcap_b), id(ada_mcap_b)};
+
+      for (int i = 0; i < 3; i++) {
+        int cx = margin_x + i * (card_w + gap);
+
+        // Rounded Card Border (Radius 16)
+        draw_rounded_rect(cx, body_y, card_w, body_h, card_radius, COLOR_FG);
+        draw_rounded_rect(cx + 1, body_y + 1, card_w - 2, body_h - 2, card_radius - 1, COLOR_FG);
+
+        int pad = 14;
+        int cy = body_y + pad;
+
+        // Symbol and Rank
+        it.printf(cx + pad, cy, id(font_symbol), COLOR_FG, "%s", symbols[i]);
+        it.printf(cx + card_w - pad, cy + 2, id(font_card_sub), COLOR_FG, TextAlign::TOP_RIGHT, "%s", ranks[i]);
+
+        // Full Name
+        cy += 28;
+        it.printf(cx + pad, cy, id(font_card_sub), COLOR_FG, "%s", names[i]);
+
+        // Price (Commas, No Cents for values >= 1000)
+        cy += 24;
+        char price_str[32];
+        if (prices[i] >= 1000.0f) {
+          int whole_price = (int)std::round(prices[i]);
+          int thousands = whole_price / 1000;
+          int remainder = whole_price - (thousands * 1000);
+          if (remainder < 10) {
+            snprintf(price_str, sizeof(price_str), "$%d,00%d", thousands, remainder);
+          } else if (remainder < 100) {
+            snprintf(price_str, sizeof(price_str), "$%d,0%d", thousands, remainder);
+          } else {
+            snprintf(price_str, sizeof(price_str), "$%d,%d", thousands, remainder);
+          }
+        } else if (prices[i] >= 1.0f) {
+          snprintf(price_str, sizeof(price_str), "$%.2f", prices[i]);
+        } else {
+          snprintf(price_str, sizeof(price_str), "$%.4f", prices[i]);
+        }
+        it.printf(cx + pad, cy, id(font_price_hero), COLOR_FG, "%s", price_str);
+
+        // 24h Change Badge
+        cy += 36;
+        bool is_pos = changes[i] >= 0;
+        char change_str[32];
+        snprintf(change_str, sizeof(change_str), "%+.2f%%", changes[i]);
+
+        int badge_w = card_w - (pad * 2);
+        int badge_h = 26;
+        draw_rounded_rect(cx + pad, cy, badge_w, badge_h, 6, COLOR_FG);
+        if (is_pos) {
+          it.printf(cx + (card_w / 2), cy + 5, id(font_card_sub), COLOR_FG, TextAlign::TOP_CENTER, "%s 24h", change_str);
+        } else {
+          it.filled_rectangle(cx + pad + 2, cy + 2, badge_w - 4, badge_h - 4, COLOR_FG);
+          it.printf(cx + (card_w / 2), cy + 5, id(font_card_sub), COLOR_BG, TextAlign::TOP_CENTER, "%s 24h", change_str);
+        }
+
+        // Mini Sparkline Box
+        cy += badge_h + 14;
+        int spark_h = 56;
+        draw_rounded_rect(cx + pad, cy, badge_w, spark_h, 8, COLOR_FG);
+        it.printf(cx + pad + 6, cy + 4, id(font_metric_label), COLOR_FG, "24h Trend");
+
+        // Synthetic smooth sparkline curve
+        int pts = 16;
+        int prev_px = cx + pad + 6;
+        int prev_py = cy + spark_h - 10;
+        for (int p = 0; p < pts; p++) {
+          int px = cx + pad + 6 + (p * (badge_w - 12) / (pts - 1));
+          float trend = (float)p / (float)pts * (changes[i] * 0.8f);
+          float wave = sinf((p + i * 5) * 0.8f) * 8.0f;
+          int py = cy + (spark_h / 2) - (int)(trend + wave);
+          py = std::max(cy + 6, std::min(cy + spark_h - 6, py));
+          if (p > 0) {
+            it.line(prev_px, prev_py, px, py, COLOR_FG);
+            it.line(prev_px, prev_py + 1, px, py + 1, COLOR_FG);
+          }
+          prev_px = px;
+          prev_py = py;
+        }
+
+        // Metrics Table
+        cy += spark_h + 14;
+        it.line(cx + pad, cy, cx + card_w - pad, cy, COLOR_FG);
+
+        cy += 8;
+        it.printf(cx + pad, cy, id(font_metric_label), COLOR_FG, "Market Cap");
+        it.printf(cx + card_w - pad, cy, id(font_metric_val), COLOR_FG, TextAlign::TOP_RIGHT, "$%.1fB", mcaps[i]);
+
+        cy += 22;
+        it.printf(cx + pad, cy, id(font_metric_label), COLOR_FG, "24h Volume");
+        it.printf(cx + card_w - pad, cy, id(font_metric_val), COLOR_FG, TextAlign::TOP_RIGHT, "$%.1fM", volumes[i]);
+      }
+
+      // ============================================================================
+      // 3. FOOTER SECTION
+      // ============================================================================
+      int footer_y = 432;
+      it.line(margin_x, footer_y - 2, 800 - margin_x, footer_y - 2, COLOR_FG);
+      it.printf(margin_x + 6, footer_y + 8, id(font_footer), COLOR_FG, "CoinMarketCap API  |  Seeed reTerminal E1001");
+
+      // Right Battery Indicator Gauge
+      int bat_w = 44;
+      int bat_h = 20;
+      int bat_x = 800 - margin_x - bat_w - 6;
+      int bat_y = footer_y + 6;
+      
+      int current_bat_pct = 88;
+      if (id(batt_percent).has_state()) {
+        current_bat_pct = (int)id(batt_percent).state;
+      }
+
+      it.printf(bat_x - 10, footer_y + 8, id(font_footer), COLOR_FG, TextAlign::TOP_RIGHT, "%d%%", current_bat_pct);
+      it.rectangle(bat_x, bat_y, bat_w, bat_h, COLOR_FG);
+      it.filled_rectangle(bat_x + bat_w, bat_y + 5, 4, 10, COLOR_FG); // terminal nub
+      int inner_w = (int)((bat_w - 6) * (current_bat_pct / 100.0f));
+      if (inner_w > 0) {
+        it.filled_rectangle(bat_x + 3, bat_y + 3, inner_w, bat_h - 6, COLOR_FG);
+      }

@@ -31,13 +31,6 @@ Part of the [dsa157/e1001](https://github.com/dsa157/e1001.git) project suite.
 ### 5. Hidden Unlit Minute Indicators
 - 4-corner minute dots (`+1`, `+2`, `+3`, `+4` minutes) only render when illuminated, keeping the frame clean and uncluttered.
 
-### 6. 5 Curated Adobe Kuler Grayscale Palettes
-- **E-Ink Paper Light** *(Default)*: Pure paper white background, deep carbon black lit letters, `#EAEAEA` / `#A0A0A0` visible unlit gray.
-- **E-Ink Classic Dark**: Deep charcoal background, pure white lit text, subtle dark slate unlit gray.
-- **E-Ink Neutral Silver**: Medium-dark background with neutral midtone grayscale steps.
-- **E-Ink Off-White Paper**: Soft bone/parchment background with dark charcoal typography.
-- **E-Ink Deep Obsidian**: Dark slate obsidian palette.
-
 ---
 
 ## Getting Started (Node.js App)

@@ -1,0 +1,19 @@
+{
+  "name": "e1001-tasks-dashboard",
+  "version": "1.0.0",
+  "description": "Seeed reTerminal E1001 E-Ink Google Tasks Dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "e1001",
+    "tasks",
+    "google-tasks",
+    "dashboard",
+    "p5js",
+    "e-ink"
+  ],
+  "license": "MIT"
+}

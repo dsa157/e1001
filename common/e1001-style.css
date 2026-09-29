@@ -1,10 +1,24 @@
 /* ============================================================================
  * Seeed reTerminal E1001 - Common Stylesheet & E-Paper Frame
- * Version: 2026.09.21.21.35.00
+ * Version: 2026.09.22.10.46.00
  * Description: Universal stylesheet for Seeed E1001 p5.js creative coding sketches.
  * ============================================================================ */
 
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap");
+@font-face {
+  font-family: 'Roboto';
+  src: url('./fonts/Roboto-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Roboto';
+  src: url('./fonts/Roboto-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap");
 
 :root {
   --bg-primary: #0e1117;
@@ -16,6 +30,7 @@
   --accent-hover: #79b8ff;
   --eink-bezel: #1e2229;
   --eink-matte: #0b0d10;
+  --font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 * {
@@ -25,7 +40,7 @@
 }
 
 body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-family);
   background-color: var(--bg-primary);
   color: var(--text-main);
   min-height: 100vh;
@@ -63,7 +78,7 @@ body {
 
 .title {
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
@@ -159,7 +174,7 @@ body {
   padding: 7px 14px;
   border-radius: 6px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;

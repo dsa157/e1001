@@ -1,0 +1,226 @@
+/* ============================================================================
+ * Seeed reTerminal E1001 Google Tasks Dashboard Stylesheet
+ * Version: 2026.09.27.11.30.00
+ * Description: Sleek dark container, simulated e-paper bezel, and responsive
+ *              controls for the Seeed reTerminal E1001 Tasks Dashboard.
+ *              Uses strictly Roboto Bold typography for all elements.
+ * ============================================================================ */
+
+@font-face {
+  font-family: 'Roboto';
+  src: url('/common/fonts/Roboto-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Roboto';
+  src: url('/common/fonts/Roboto-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+:root {
+  --bg-app: #0d0f12;
+  --bg-card: #161920;
+  --bg-bezel: #222631;
+  --border-color: #2b3140;
+  --border-focus: #4e88ff;
+  --text-main: #f0f3f8;
+  --text-muted: #8a96aa;
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-family: var(--font-family);
+  font-weight: 700;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.app-container {
+  width: 100%;
+  max-width: 900px;
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+}
+
+.header-left, .header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-main);
+}
+
+.badge {
+  background-color: var(--border-color);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.badge-live {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-mock {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.version-tag {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.canvas-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #07080a;
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.eink-bezel {
+  width: 800px;
+  height: 480px;
+  background-color: #ffffff;
+  border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.app-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.control-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-group label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.styled-input, .styled-select {
+  background-color: var(--bg-app);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-family: var(--font-family);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.styled-input:focus, .styled-select:focus {
+  border-color: var(--border-focus);
+}
+
+.styled-input {
+  width: 140px;
+}
+
+.button-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-family: var(--font-family);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  background-color: var(--border-color);
+  border-color: var(--text-muted);
+}
+
+.btn-secondary {
+  background-color: var(--bg-bezel);
+}
+
+.btn-toggle.active {
+  background-color: var(--accent);
+  border-color: var(--accent-hover);
+  color: #ffffff;
+}
+
+@media (max-width: 860px) {
+  .canvas-wrapper {
+    justify-content: flex-start;
+  }
+}
