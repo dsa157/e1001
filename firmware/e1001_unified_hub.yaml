@@ -1,18 +1,18 @@
 # ============================================================================
 # Seeed reTerminal E1001 - Unified Native ESPHome Multi-Module Dashboard
-# Version: 2026.09.29.16.45.00
+# Version: 2026.09.29.17.00.00
 # Description: 100% Autonomous, on-device multi-module dashboard for Seeed E1001
 #              (ESP32-S3 + Waveshare 7.50in V2 800x480 e-paper display).
 #              Runs 100% standalone without any computer or host server.
 #
 # Integrated Modules:
 #   Module 0: Live Open-Meteo Weather Dashboard (5-Day Outlook + SVG Icons)
-#   Module 1: Typographic QLOCKTWO Word Clock (6 Languages + RTC Sync)
+#   Module 1: Authentic Typographic QLOCKTWO Word Clock (6 Languages + RTC Sync)
 #   Module 2: Cryptocurrency Asset Market Tracker (Spot Quotes & 24h Deltas)
-#   Module 3: Algorithmic Generative Art (Contours, Streamlines, Rosettes)
+#   Module 3: Algorithmic Generative Art (Harmonics, Streamlines, Rosettes)
 #
 # Hardware Button Controls:
-#   - GPIO4 (Next Button):   Switch to Next Module (or long press auto-cycle)
+#   - GPIO4 (Next Button):   Switch to Next Module
 #   - GPIO5 (Prev Button):   Switch to Previous Module
 #   - GPIO3 (Action Button): Sub-module toggle (°C/°F, Lang, Invert, New Seed)
 # ============================================================================
@@ -20,7 +20,6 @@
 substitutions:
   name: "seeed-e1001-unified-hub"
   friendly_name: "Seeed E1001 Unified Hub"
-  # Default Coordinates for Weather Fallback (Hanoi / Bangkok)
   default_lat: "21.0285"
   default_lon: "105.8542"
   default_city: "Hanoi, VN"
@@ -108,9 +107,6 @@ globals:
   - id: cur_humidity
     type: int
     initial_value: '68'
-  - id: cur_condition_str
-    type: std::string
-    initial_value: '"Mainly Clear"'
   - id: fc_max_0
     type: int
     initial_value: '31'
@@ -160,22 +156,22 @@ globals:
   # Crypto Module Dynamic State
   - id: btc_price
     type: float
-    initial_value: '68450.0'
+    initial_value: '84250.0'
   - id: btc_change_24h
     type: float
-    initial_value: '3.42'
+    initial_value: '2.01'
   - id: eth_price
     type: float
-    initial_value: '2640.5'
+    initial_value: '2718.5'
   - id: eth_change_24h
     type: float
-    initial_value: '-1.15'
+    initial_value: '3.05'
   - id: ada_price
     type: float
-    initial_value: '0.385'
+    initial_value: '0.254'
   - id: ada_change_24h
     type: float
-    initial_value: '2.10'
+    initial_value: '4.64'
 
 # ============================================================================
 # LOGGING & WI-FI SETUP
@@ -197,6 +193,7 @@ wifi:
       - http_request.get:
           url: "http://ip-api.com/json"
           capture_response: true
+          max_response_buffer_size: 4096
           on_response:
             then:
               - lambda: |-
@@ -223,12 +220,13 @@ wifi:
 captive_portal:
 
 # ============================================================================
-# HTTP REST API CLIENT & SCRIPTS
+# HTTP REST API CLIENT & SCRIPTS (Large buffer to receive full CMC quotes)
 # ============================================================================
 http_request:
   id: http_client
   verify_ssl: false
   timeout: 15s
+  buffer_size_rx: 8192
 
 script:
   # Fetch Open-Meteo Weather Data
@@ -240,6 +238,7 @@ script:
       - http_request.get:
           url: !lambda return weather_url;
           capture_response: true
+          max_response_buffer_size: 4096
           on_response:
             then:
               - lambda: |-
@@ -285,7 +284,7 @@ script:
                   then:
                     - component.update: eink_display
 
-  # Fetch Crypto Quotes (CoinMarketCap or CoinGecko fallback)
+  # Fetch Crypto Quotes from CoinMarketCap (with 8KB response buffer)
   - id: fetch_crypto_script
     mode: restart
     then:
@@ -295,6 +294,7 @@ script:
             X-CMC_PRO_API_KEY: !secret cmc_api_key
             Accept: "application/json"
           capture_response: true
+          max_response_buffer_size: 8192
           on_response:
             then:
               - lambda: |-
@@ -507,47 +507,37 @@ image:
     resize: 42x42
     type: BINARY
 
-# Clean Sans-Serif Fonts (Roboto Bold)
+# Clean Sans-Serif Fonts (Roboto Bold) - Strictly >= 18px
 font:
   - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_huge
-    size: 48
-    glyphs: "0123456789° %/:-.,|#•abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
+    size: 54
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
 
   - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_large
     size: 40
-    glyphs: "0123456789° %/:-.,|#•abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
 
   - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_qlock
     size: 28
-    glyphs: "0123456789° %/:-.,|'#•abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
+    glyphs: "0123456789° %/:-.,|'#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
 
   - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_title
-    size: 22
-    glyphs: "0123456789° %/:-.,|#•abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
-
-  - file: "assets/fonts/Roboto-Bold.ttf"
-    id: font_card_temp
-    size: 18
-    glyphs: "0123456789° %/:-.,|#•abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
+    size: 24
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
 
   - file: "assets/fonts/Roboto-Bold.ttf"
     id: font_subtitle
-    size: 16
-    glyphs: "0123456789° %/:-.,|#•abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
+    size: 20
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
 
   - file: "assets/fonts/Roboto-Bold.ttf"
-    id: font_card_sub
-    size: 13
-    glyphs: "0123456789° %/:-.,|#•abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
-
-  - file: "assets/fonts/Roboto-Bold.ttf"
-    id: font_small
-    size: 12
-    glyphs: "0123456789° %/:-.,|#•abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
+    id: font_body
+    size: 18
+    glyphs: "0123456789° %/:-.,|#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ+$"
 
 # ============================================================================
 # E-INK DISPLAY DRIVER (WAVESHARE 7.50IN V2 - 800x480)
@@ -589,13 +579,13 @@ display:
         int margin_x = 20;
 
         // Top Header (Left: Location & Current Temp)
-        it.printf(margin_x, 16, id(font_title), c_fg, "%s", id(loc_name).c_str());
+        it.printf(margin_x, 14, id(font_title), c_fg, "%s", id(loc_name).c_str());
 
         int temp_val = id(cur_temp_c);
         if (id(use_fahrenheit)) temp_val = (int)((temp_val * 9.0f / 5.0f) + 32.0f);
-        it.printf(margin_x, 48, id(font_huge), c_fg, "%d°%s", temp_val, id(use_fahrenheit) ? "F" : "C");
+        it.printf(margin_x, 44, id(font_huge), c_fg, "%d°%s", temp_val, id(use_fahrenheit) ? "F" : "C");
 
-        // Header Subtitle: Condition, Humidity
+        // Header Subtitle: Condition, Humidity (Font >= 18px)
         const char* cond_label = "Mainly Clear";
         int w_code = id(cur_weather_code);
         if (w_code == 0) cond_label = "Clear Sky";
@@ -607,7 +597,7 @@ display:
         else if (w_code >= 80 && w_code <= 82) cond_label = "Heavy Rain";
         else if (w_code >= 95) cond_label = "Thunderstorm";
 
-        it.printf(margin_x, 108, id(font_subtitle), c_fg, "%s  •  Humidity: %d%%", cond_label, id(cur_humidity));
+        it.printf(margin_x, 108, id(font_body), c_fg, "%s  |  Humidity: %d%%", cond_label, id(cur_humidity));
 
         // Top Header (Right: Live Clock & Date)
         char time_str[16];
@@ -618,7 +608,7 @@ display:
           if (h12 == 0) h12 = 12;
           snprintf(time_str, sizeof(time_str), "%d:%02d %s", h12, cur_min, cur_hour >= 12 ? "PM" : "AM");
         }
-        it.printf(800 - margin_x, 16, id(font_large), c_fg, TextAlign::TOP_RIGHT, "%s", time_str);
+        it.printf(800 - margin_x, 14, id(font_large), c_fg, TextAlign::TOP_RIGHT, "%s", time_str);
 
         static const char* days_full[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
         static const char* months_full[] = {"", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
@@ -647,14 +637,14 @@ display:
 
           // Card Day Name
           if (i == 0) {
-            it.printf(cx + card_w / 2, body_y + 14, id(font_subtitle), c_fg, TextAlign::TOP_CENTER, "TODAY");
+            it.printf(cx + card_w / 2, body_y + 12, id(font_subtitle), c_fg, TextAlign::TOP_CENTER, "TODAY");
           } else {
             int d_name_idx = (cur_day_of_week - 1 + i) % 7;
-            it.printf(cx + card_w / 2, body_y + 14, id(font_subtitle), c_fg, TextAlign::TOP_CENTER, "%s", day_abbrs[d_name_idx]);
+            it.printf(cx + card_w / 2, body_y + 12, id(font_subtitle), c_fg, TextAlign::TOP_CENTER, "%s", day_abbrs[d_name_idx]);
           }
 
-          // Card Date
-          it.printf(cx + card_w / 2, body_y + 36, id(font_small), c_fg, TextAlign::TOP_CENTER, "%d %s", cur_day + i, months_full[m_idx]);
+          // Card Date (Font >= 18px)
+          it.printf(cx + card_w / 2, body_y + 36, id(font_body), c_fg, TextAlign::TOP_CENTER, "%d %s", cur_day + i, months_full[m_idx]);
 
           // Weather Icon
           int img_x = cx + (card_w - 42) / 2;
@@ -669,14 +659,14 @@ display:
           else if (code >= 95) it.image(img_x, img_y, id(img_cloud_lightning));
           else it.image(img_x, img_y, id(img_cloud));
 
-          // Condition Name
+          // Condition Name (Font >= 18px)
           const char* c_name = "Clear";
           if (code == 1 || code == 2) c_name = "Partly";
           else if (code == 3) c_name = "Overcast";
           else if (code >= 51 && code <= 67) c_name = "Rain";
           else if (code >= 80 && code <= 82) c_name = "Showers";
           else if (code >= 95) c_name = "Storm";
-          it.printf(cx + card_w / 2, body_y + 124, id(font_card_sub), c_fg, TextAlign::TOP_CENTER, "%s", c_name);
+          it.printf(cx + card_w / 2, body_y + 122, id(font_body), c_fg, TextAlign::TOP_CENTER, "%s", c_name);
 
           // Temps High / Low
           int max_t = card_max_c[i];
@@ -685,18 +675,18 @@ display:
             max_t = (int)((max_t * 9.0f / 5.0f) + 32.0f);
             min_t = (int)((min_t * 9.0f / 5.0f) + 32.0f);
           }
-          it.printf(cx + card_w / 2 - 20, body_y + 160, id(font_card_temp), c_fg, TextAlign::TOP_CENTER, "%d°", max_t);
-          it.printf(cx + card_w / 2 + 20, body_y + 162, id(font_subtitle), c_fg, TextAlign::TOP_CENTER, "%d°", min_t);
+          it.printf(cx + card_w / 2 - 22, body_y + 160, id(font_subtitle), c_fg, TextAlign::TOP_CENTER, "%d°", max_t);
+          it.printf(cx + card_w / 2 + 22, body_y + 160, id(font_body), c_fg, TextAlign::TOP_CENTER, "%d°", min_t);
         }
 
-        // Footer Section
-        it.printf(margin_x, 435, id(font_subtitle), c_fg, "Open-Meteo REST  •  E1001 Native Hub");
+        // Footer Section (Font >= 18px)
+        it.printf(margin_x, 435, id(font_body), c_fg, "Open-Meteo REST  |  E1001 Native Hub");
         int bat_pct = id(batt_percent).has_state() ? (int)id(batt_percent).state : 85;
-        it.printf(800 - margin_x, 435, id(font_subtitle), c_fg, TextAlign::TOP_RIGHT, "Battery: %d%%", bat_pct);
+        it.printf(800 - margin_x, 435, id(font_body), c_fg, TextAlign::TOP_RIGHT, "Battery: %d%%", bat_pct);
       }
 
       // ============================================================================
-      // MODULE 1: NATIVE QLOCKTWO WORD CLOCK
+      // MODULE 1: AUTHENTIC NATIVE QLOCKTWO WORD CLOCK (1:1 Standalone Parity)
       // ============================================================================
       else if (mod == 1) {
         struct QLang {
@@ -725,162 +715,200 @@ display:
           },
           // 1: German
           {
-            "GERMAN", 25,
-            "ESKISTAFÜNFZEHNZWANZIGDREIVIERTELTGNACHVORHALBAMZWÖLFZWEIEINSSIEBENVIERFÜNFSECHSACHTNEUNZEHNELFUHR",
+            "DEUTSCH", 35,
+            "ESKISTAFÜNFZEHNZWANZIGDREIVIERTELVORFUNKNACHHALBAELFÜNFEINSXÄMZWEIDREIAUJVIERSECHSNLACHTSIEBENZWÖLFZEHNEUNKUHR",
             {
-              {0x1b, 0, 0x7e000, 0}, {0x1b, 0, 0x3c000, 0}, {0x1b, 0, 0x7800, 0}, {0x1b, 0, 0x7c, 0},
-              {0x1b, 0, 0x7800000, 0}, {0x1b, 0, 0x3e0, 0}, {0x1b, 0x7c00000, 0, 0}, {0x1b, 0, 0, 0x7c0},
-              {0x1b, 0, 0, 0x3c000}, {0x1b, 0, 0, 0x3e00000}, {0x1b, 0, 0, 0x38000}, {0x1b, 0, 0, 0x7}
+              {0x3b, 0, 7, 0}, {0x3b, 0, 0x780, 0}, {0x3b, 0, 0x7800, 0}, {0x3b, 0, 0x3c0000, 0},
+              {0x3b, 0x7800000, 0, 0}, {0x3b, 0, 0x7c00000, 0}, {0x3b, 0, 0, 0x7e0}, {0x3b, 0, 0, 0x1e},
+              {0x3b, 0, 0, 0x780000}, {0x3b, 0, 0, 0xf0000}, {0x3b, 0xe00000, 0, 0}, {0x3b, 0, 0, 0xf800}
             },
             {
-              {0, 0, 0, 0x70}, {0x7c0, 0x3800, 0, 0}, {0x3c000, 0x3800, 0, 0}, {0x7c00000, 0, 0, 0},
-              {0x7c0, 0x3c00, 0, 0}, {0x7c0, 0x3800, 0x380000, 0}, {0, 0, 0x380000, 0}, {0x7c0, 0x3800, 0x380000, 0},
-              {0x7c00000, 0x3c00, 0, 0}, {0x7c00000, 0, 0, 0}, {0x3c000, 0x3800, 0, 0}, {0x7c0, 0x3800, 0, 0}
+              {0, 0, 0, 0x7000000}, {0x780, 0xf000, 0, 0}, {0x7800, 0xf000, 0, 0}, {0xc000000, 0xf01f, 0, 0},
+              {0x3f8000, 0xf000, 0, 0}, {0x780, 0xf00e0, 0, 0}, {0, 0xf0000, 0, 0}, {0x780, 0xff000, 0, 0},
+              {0x3f8000, 0xe0, 0, 0}, {0xc000000, 0xff, 0, 0}, {0x7800, 0xe0, 0, 0}, {0x780, 0xe0, 0, 0}
             }
           },
           // 2: French
           {
-            "FRENCH", 25,
-            "ILKESTODEUXQUATRETROISNEUFUNESHUITSEPTOONZEMIDIXMINUITRHEURESETUMOINSLLEDEMIEQUARTVINGT-CINQUEDIX",
+            "FRANÇAIS", 25,
+            "ILNESTOUNERDEUXNUTROISQUATREDOUZECINQSIXSEPTHUITNEUFDIXONZERHEURESMOINSOLEDIXETRQUARTREDVINGT-CINQUETSDEMIEPAN",
             {
-              {0x1f, 0x78000, 0, 0}, {0x1f, 0x3c0, 0, 0}, {0x1f, 0x7c00000, 0, 0}, {0x1f, 0x7c000, 0, 0},
-              {0x1f, 0, 0x3e, 0}, {0x1f, 0, 0x78000, 0}, {0x1f, 0, 0x7c00000, 0}, {0x1f, 0, 0x7c0, 0},
-              {0x1f, 0x3c0000, 0, 0}, {0x1f, 0, 0x380000, 0}, {0x1f, 0, 0, 0x3e}, {0x1f, 0, 0, 0x3f0}
+              {0x3bb, 0, 0x3e0, 0}, {0x783b, 0, 0x7e0, 0}, {0x3e003b, 0, 0x7e0, 0}, {0xfc0003b, 0, 0x7e0, 0},
+              {0x3b, 0x1e0, 0x7e0, 0}, {0x3b, 0xe00, 0x7e0, 0}, {0x3b, 0xf000, 0x7e0, 0}, {0x3b, 0xf0000, 0x7e0, 0},
+              {0x3b, 0xf00000, 0x7e0, 0}, {0x3b, 0x7000000, 0x7e0, 0}, {0x3b, 0, 0x7ef, 0}, {0x3b, 0x1f, 0x7e0, 0}
             },
             {
-              {0, 0, 0, 0}, {0, 0, 0, 0x7c00000}, {0, 0, 0, 0x3c0}, {0, 0, 0, 0x7c0000},
-              {0, 0, 0, 0x7fc0000}, {0, 0, 0, 0x3e}, {0, 0, 0x7c0, 0x7fc0000}, {0, 0, 0x7c0, 0x7c0000},
-              {0, 0, 0x7c0, 0x7c0000}, {0, 0, 0x7c0, 0x3c0}, {0, 0, 0x7c0, 0x7c00000}, {0, 0, 0, 0}
+              {0, 0, 0, 0}, {0, 0, 0, 0x7800}, {0, 0, 0x380000, 0}, {0, 0, 0xec00000, 3},
+              {0, 0, 0, 0x3e0}, {0, 0, 0, 0x7fe0}, {0, 0, 0, 0xfb0000}, {0, 0, 0xf800, 0x7fe0},
+              {0, 0, 0xf800, 0x3e0}, {0, 0, 0xe06f800, 3}, {0, 0, 0x38f800, 0}, {0, 0, 0xf800, 0x7800}
             }
           },
           // 3: Spanish
           {
-            "SPANISH", 25,
-            "ESONLASUNAODOSBSTRESOOCUATRODNCINCOSEISSIETEUOCHONUEVEDIEZSONCETRECELASMEDIAMENOSODIEZYVEINTICINCO",
+            "ESPAÑOL", 25,
+            "ESONELASUNADOSITRESORECUATROCINCOSEISASIETENOCHONUEVEYOLADIEZSONCEDOCELYMENOSOVEINTEDIEZVEINTICINCOMEDIACUARTO",
             {
-              {0x1b, 0x780, 0, 0}, {0x1f, 0x78000, 0, 0}, {0x1f, 0x7c00000, 0, 0}, {0x1f, 0, 0x7c, 0},
-              {0x1f, 0, 0x7c000, 0}, {0x1f, 0, 0x3c00000, 0}, {0x1f, 0, 0, 0x7c}, {0x1f, 0, 0, 0x7c00},
-              {0x1f, 0, 0, 0x3e0000}, {0x1f, 0, 0, 0x7800000}, {0x1f, 0, 0, 0x3c}, {0x1f, 0, 0, 0x3f0}
+              {0x763, 0, 0, 0}, {0x38ee, 0, 0, 0}, {0x780ee, 0, 0, 0}, {0xfc000ee, 0, 0, 0},
+              {0xee, 0x1f, 0, 0}, {0xee, 0x1e0, 0, 0}, {0xee, 0x7c00, 0, 0}, {0xee, 0xf0000, 0, 0},
+              {0xee, 0x1f00000, 0, 0}, {0xee, 0, 0x3c, 0}, {0xee, 0, 0x780, 0}, {0xee, 0, 0x7800, 0}
             },
             {
-              {0, 0, 0, 0}, {0, 0, 0x200, 0x7c00000}, {0, 0, 0x200, 0x3c0}, {0, 0, 0x200, 0x7c0000},
-              {0, 0, 0x200, 0x7fc0000}, {0, 0, 0, 0x3e}, {0, 0, 0x7c0, 0x7fc0000}, {0, 0, 0x7c0, 0x7c0000},
-              {0, 0, 0x7c0, 0x7c0000}, {0, 0, 0x7c0, 0x3c0}, {0, 0, 0x7c0, 0x7c00000}, {0, 0, 0, 0}
+              {0, 0, 0, 0}, {0, 0, 0x10000, 0xf800}, {0, 0, 0x10000, 0x1e}, {0, 0, 0x10000, 0x7e00000},
+              {0, 0, 0xf810000, 1}, {0, 0, 0x10000, 0xffe0}, {0, 0, 0x10000, 0x1f0000}, {0, 0, 0x3e0000, 0xffe0},
+              {0, 0, 0xfbe0000, 1}, {0, 0, 0x3e0000, 0x7e00000}, {0, 0, 0x3e0000, 0x1e}, {0, 0, 0x3e0000, 0xf800}
             }
           },
           // 4: Italian
           {
-            "ITALIAN", 25,
-            "SONOEL'LEUNAOODUESOTRETQUATTROCINQUESSEISETTEOTTONOVEDIECIUNDICIDODICIMENOESUNQUARTODIECIVENTICINQUE",
+            "ITALIANO", 25,
+            "SONORLEBOREÉRĽUNASDUEZTREOTTONOVEDIECIUNDICIDODICISETTEQUATTROCSEICINQUESMENOECUNOQUARTOVENTICINQUEDIECIEMEZZA",
             {
-              {0x1b, 0x780, 0, 0}, {0x1f, 0x78000, 0, 0}, {0x1f, 0x7c00000, 0, 0}, {0x1f, 0, 0x7c, 0},
-              {0x1f, 0, 0x7c000, 0}, {0x1f, 0, 0x3c00000, 0}, {0x1f, 0, 0, 0x7c}, {0x1f, 0, 0, 0x7c00},
-              {0x1f, 0, 0, 0x3e0000}, {0x1f, 0, 0, 0x7800000}, {0x1f, 0, 0, 0x3c}, {0x1f, 0, 0, 0x3f0}
+              {0x1e800, 0, 0, 0}, {0x1c006f, 0, 0, 0}, {0x1c0006f, 0, 0, 0}, {0x6f, 0, 0x7f, 0},
+              {0x6f, 0, 0x1f800, 0}, {0x6f, 0, 0x700, 0}, {0x6f, 0x7c00000, 0, 0}, {0xe00006f, 1, 0, 0},
+              {0x6f, 0x1e, 0, 0}, {0x6f, 0x3e0, 0, 0}, {0x6f, 0xfc00, 0, 0}, {0x6f, 0x3f0000, 0, 0}
             },
             {
-              {0, 0, 0, 0}, {0, 0, 0x200, 0x7c00000}, {0, 0, 0x200, 0x3c0}, {0, 0, 0x200, 0x7c0000},
-              {0, 0, 0x200, 0x7fc0000}, {0, 0, 0, 0x3e}, {0, 0, 0x7c0, 0x7fc0000}, {0, 0, 0x7c0, 0x7c0000},
-              {0, 0, 0x7c0, 0x7c0000}, {0, 0, 0x7c0, 0x3c0}, {0, 0, 0x7c0, 0x7c00000}, {0, 0, 0, 0}
+              {0, 0, 0, 0}, {0, 0, 0x400000, 0xfc00}, {0, 0, 0x400000, 0x1f0000}, {0, 0, 0xb400000, 0x1f},
+              {0, 0, 0x400000, 0x3e0}, {0, 0, 0x400000, 0xffe0}, {0, 0, 0x400000, 0x7c00000}, {0, 0, 0x3c0000, 0xffe0},
+              {0, 0, 0x3c0000, 0x3e0}, {0, 0, 0xb3c0000, 0x1f}, {0, 0, 0x3c0000, 0x1f0000}, {0, 0, 0x3c0000, 0xfc00}
             }
           },
           // 5: Dutch
           {
-            "DUTCH", 25,
-            "HETKISTAVIJFTIENKWARTVOOROVERHALFAMTWEEÉÉNSVIERVIJFZESZEVENACHTNEGENALFTWAALEFTIENUUR",
+            "NEDERLANDS", 40,
+            "HETKISAVIJFTIENBTZVOOROVERMEKWARTHALFSPWOVERVOORTHGÉÉNSTWEEPVCDRIEVIERVIJFZESZEVENONEGENACHTTIENELFTWAALFBFUUR",
             {
-              {0x1b, 0, 0x7e000, 0}, {0x1b, 0, 0x3c000, 0}, {0x1b, 0, 0x7800, 0}, {0x1b, 0, 0x7c, 0},
-              {0x1b, 0, 0x7800000, 0}, {0x1b, 0, 0x3e0, 0}, {0x1b, 0x7c00000, 0, 0}, {0x1b, 0, 0, 0x7c0},
-              {0x1b, 0, 0, 0x3c000}, {0x1b, 0, 0, 0x3e00000}, {0x1b, 0, 0, 0x38000}, {0x1b, 0, 0, 0x7}
+              {0x37, 0x3800000, 0, 0}, {0x37, 0, 0xf, 0}, {0x37, 0, 0x780, 0}, {0x37, 0, 0x7800, 0},
+              {0x37, 0, 0x78000, 0}, {0x37, 0, 0x380000, 0}, {0x37, 0, 0x7c00000, 0}, {0x37, 0, 0, 0x1e0},
+              {0x37, 0, 0, 0x1f}, {0x37, 0, 0, 0x1e00}, {0x37, 0, 0, 0xe000}, {0x37, 0, 0, 0x3f0000}
             },
             {
-              {0, 0, 0, 0x70}, {0x7c0, 0x3800, 0, 0}, {0x3c000, 0x3800, 0, 0}, {0x7c00000, 0, 0, 0},
-              {0x7c0, 0x3c00, 0, 0}, {0x7c0, 0x3800, 0x380000, 0}, {0, 0, 0x380000, 0}, {0x7c0, 0x3800, 0x380000, 0},
-              {0x7c00000, 0x3c00, 0, 0}, {0x7c00000, 0, 0, 0}, {0x3c000, 0x3800, 0, 0}, {0x7c0, 0x3800, 0, 0}
+              {0, 0, 0, 0x7000000}, {0x3c00780, 0, 0, 0}, {0x3c07800, 0, 0, 0}, {0, 0xf01f, 0, 0},
+              {0x3c7800, 0x1e0, 0, 0}, {0x3c0780, 0x1e0, 0, 0}, {0, 0x1e0, 0, 0}, {0x3c00780, 0x1e0, 0, 0},
+              {0x3c07800, 0x1e0, 0, 0}, {0, 0xf001f, 0, 0}, {0x3c7800, 0, 0, 0}, {0x3c0780, 0, 0, 0}
             }
           }
         };
 
-        int l_idx = id(qlock_lang_idx) % 6;
+        int l_idx = id(qlock_lang_idx);
+        if (l_idx < 0 || l_idx >= 6) l_idx = 0;
         const QLang& lang = LANGS[l_idx];
 
-        // Qlock calculation
-        int m_step = (cur_min / 5) % 12;
-        int h_target = (cur_hour + (cur_min >= lang.offset ? 1 : 0)) % 12;
+        int hour = cur_hour;
+        int minute = cur_min;
+        if (hour == 0) hour = 12;
 
-        uint32_t active_mask[4];
-        for (int b = 0; b < 4; b++) {
-          active_mask[b] = lang.hr[h_target][b] | lang.mi[m_step][b];
+        int five_min_idx = minute / 5;
+        if ((five_min_idx * 5 + lang.offset) >= 60) {
+          hour += 1;
+        }
+        if (hour > 12) hour -= 12;
+        if (hour == 0) hour = 12;
+
+        // Merge hour and minute bitmasks
+        uint32_t merged[4];
+        for (int i = 0; i < 4; i++) {
+          merged[i] = lang.hr[hour - 1][i] | lang.mi[five_min_idx][i];
         }
 
-        // Draw 11 x 10 Word Grid Centered
-        int grid_w = 540;
+        // Populate lit boolean flags (1..110)
+        bool is_lit[111] = {false};
+        int offsets[4] = {1, 29, 56, 84};
+        for (int i = 0; i < 4; i++) {
+          uint32_t cset = merged[i];
+          int crange = 28 - (i % 2);
+          int coff = offsets[i];
+          for (int j = 0; j < crange; j++) {
+            if ((cset & 1) == 1) {
+              int cid = j + coff;
+              if (cid <= 110) is_lit[cid] = true;
+            }
+            cset >>= 1;
+          }
+        }
+
+        // Corner Minutes (+1..+4)
+        int rem_min = minute % 5;
+        int cmask = (1 << rem_min) - 1;
+        bool dot_tl = (cmask & 1) != 0;
+        bool dot_tr = (cmask & 2) != 0;
+        bool dot_br = (cmask & 4) != 0;
+        bool dot_bl = (cmask & 8) != 0;
+
+        // Centered Matrix Geometry (800x480 screen, no footer)
+        int grid_w = 520;
         int grid_h = 420;
         int start_x = (800 - grid_w) / 2;
         int start_y = (480 - grid_h) / 2;
         int cell_w = grid_w / 11;
         int cell_h = grid_h / 10;
 
-        const char* p_str = lang.clock;
-        for (int row = 0; row < 10; row++) {
-          for (int col = 0; col < 11; col++) {
-            if (*p_str == '\0') break;
+        // Draw Corner Minute Dots ONLY when illuminated
+        int dot_m = 24;
+        int dot_r = 6;
+        if (dot_tl) it.filled_circle(dot_m, dot_m, dot_r, c_fg);
+        if (dot_tr) it.filled_circle(800 - dot_m, dot_m, dot_r, c_fg);
+        if (dot_br) it.filled_circle(800 - dot_m, 480 - dot_m, dot_r, c_fg);
+        if (dot_bl) it.filled_circle(dot_m, 480 - dot_m, dot_r, c_fg);
 
-            int char_idx = row * 11 + col;
-            int bucket = char_idx / 32;
-            int bit_pos = char_idx % 32;
-            bool is_lit = (bucket < 4) && ((active_mask[bucket] & (1UL << bit_pos)) != 0);
+        // Render Matrix Grid (Lit in solid 100%, Unlit in 25% dithered gray at 28px font)
+        int char_idx = 0;
+        for (int r = 0; r < 10; r++) {
+          for (int c = 0; c < 11; c++) {
+            int cell_id = (r * 11) + c + 1;
+            char ch = lang.clock[char_idx++];
+            int cx = start_x + (c * cell_w) + (cell_w / 2);
+            int cy = start_y + (r * cell_h) + (cell_h / 2);
 
-            char c_buf[8] = {0};
-            int c_len = 1;
-            c_buf[0] = *p_str;
-            // Handle UTF-8 multi-byte
-            if ((uint8_t)*p_str >= 0xC0) {
-              c_len = 2;
-              c_buf[1] = *(p_str + 1);
-            }
-            p_str += c_len;
-
-            int letter_x = start_x + col * cell_w + cell_w / 2;
-            int letter_y = start_y + row * cell_h + cell_h / 2;
-
-            if (is_lit) {
-              it.printf(letter_x, letter_y - 14, id(font_qlock), c_fg, TextAlign::TOP_CENTER, "%s", c_buf);
+            if (is_lit[cell_id]) {
+              // Lit letters: Solid black / solid white (100% density)
+              if (ch == 'o') {
+                it.printf(cx, cy, id(font_qlock), c_fg, TextAlign::CENTER, "O'");
+              } else {
+                it.printf(cx, cy, id(font_qlock), c_fg, TextAlign::CENTER, "%c", ch);
+              }
             } else {
-              // Unlit letter in subtle dithered dots
-              if ((row + col) % 2 == 0) {
-                it.printf(letter_x, letter_y - 14, id(font_qlock), c_fg, TextAlign::TOP_CENTER, "%s", c_buf);
+              // Unlit letters: Dithered to 25% dot-grid
+              if (ch == 'o') {
+                it.printf(cx, cy, id(font_qlock), c_fg, TextAlign::CENTER, "O'");
+              } else {
+                it.printf(cx, cy, id(font_qlock), c_fg, TextAlign::CENTER, "%c", ch);
+              }
+
+              // Apply 25% dither mask: only keep pixels where px%2==0 and py%2==0
+              int bx0 = cx - (cell_w / 2);
+              int bx1 = cx + (cell_w / 2);
+              int by0 = cy - (cell_h / 2);
+              int by1 = cy + (cell_h / 2);
+              for (int py = by0; py <= by1; py++) {
+                for (int px = bx0; px <= bx1; px++) {
+                  if ((px % 2 != 0) || (py % 2 != 0)) {
+                    it.draw_pixel_at(px, py, c_bg);
+                  }
+                }
               }
             }
           }
         }
-
-        // Corner Minute Dots (Minute remainder: 1..4)
-        int min_dots = cur_min % 5;
-        int dot_margin = 24;
-        int dot_r = 6;
-        if (min_dots >= 1) it.filled_circle(dot_margin, dot_margin, dot_r, c_fg);
-        if (min_dots >= 2) it.filled_circle(800 - dot_margin, dot_margin, dot_r, c_fg);
-        if (min_dots >= 3) it.filled_circle(800 - dot_margin, 480 - dot_margin, dot_r, c_fg);
-        if (min_dots >= 4) it.filled_circle(dot_margin, 480 - dot_margin, dot_r, c_fg);
       }
 
       // ============================================================================
-      // MODULE 2: NATIVE CRYPTO ASSET DASHBOARD
+      // MODULE 2: NATIVE CRYPTO ASSET DASHBOARD (Clean Header & 12h Clock)
       // ============================================================================
       else if (mod == 2) {
         int margin_x = 24;
 
-        // Header Section
+        // Clean Header (Left: Title only, without subtitles)
         it.printf(margin_x, 16, id(font_title), c_fg, "CRYPTO ASSET MARKET");
-        it.printf(margin_x, 44, id(font_card_sub), c_fg, "LIVE SPOT QUOTES  •  COINMARKETCAP");
 
-        // Header Clock (Right)
+        // Clean Header (Right: 12-Hour Clock)
+        int h12 = cur_hour % 12;
+        if (h12 == 0) h12 = 12;
         char time_str[16];
-        snprintf(time_str, sizeof(time_str), "%02d:%02d", cur_hour, cur_min);
+        snprintf(time_str, sizeof(time_str), "%d:%02d %s", h12, cur_min, cur_hour >= 12 ? "PM" : "AM");
         it.printf(800 - margin_x, 16, id(font_title), c_fg, TextAlign::TOP_RIGHT, "%s", time_str);
-        it.printf(800 - margin_x, 44, id(font_small), c_fg, TextAlign::TOP_RIGHT, "USD PAIRS");
 
-        it.line(margin_x, 70, 800 - margin_x, 70, c_fg);
+        it.line(margin_x, 56, 800 - margin_x, 56, c_fg);
 
         // Crypto Asset Cards (BTC, ETH, ADA)
         struct CryptoItem {
@@ -896,17 +924,17 @@ display:
           {"ADA", "Cardano", id(ada_price), id(ada_change_24h)}
         };
 
-        int start_y = 85;
-        int card_h = 100;
-        int gap = 12;
+        int start_y = 72;
+        int card_h = 104;
+        int gap = 14;
 
         for (int i = 0; i < 3; i++) {
           int y = start_y + i * (card_h + gap);
           it.rectangle(margin_x, y, 800 - 2 * margin_x, card_h, c_fg);
 
-          // Symbol & Name
-          it.printf(margin_x + 20, y + 20, id(font_title), c_fg, "%s", items[i].sym);
-          it.printf(margin_x + 20, y + 54, id(font_card_sub), c_fg, "%s", items[i].name);
+          // Symbol (Font 24px) & Name (Font >= 18px)
+          it.printf(margin_x + 24, y + 22, id(font_title), c_fg, "%s", items[i].sym);
+          it.printf(margin_x + 24, y + 58, id(font_body), c_fg, "%s", items[i].name);
 
           // Price
           char p_buf[32];
@@ -915,28 +943,28 @@ display:
           } else {
             snprintf(p_buf, sizeof(p_buf), "$%.4f", items[i].price);
           }
-          it.printf(500, y + 32, id(font_qlock), c_fg, TextAlign::TOP_RIGHT, "%s", p_buf);
+          it.printf(520, y + 36, id(font_qlock), c_fg, TextAlign::TOP_RIGHT, "%s", p_buf);
 
-          // 24h Change Badge
+          // 24h Change Badge (Font >= 18px)
           bool is_pos = items[i].change >= 0;
-          int badge_w = 110;
-          int badge_h = 36;
-          int badge_x = 800 - margin_x - badge_w - 20;
-          int badge_y = y + 32;
+          int badge_w = 120;
+          int badge_h = 42;
+          int badge_x = 800 - margin_x - badge_w - 24;
+          int badge_y = y + 30;
 
           it.rectangle(badge_x, badge_y, badge_w, badge_h, c_fg);
-          it.printf(badge_x + badge_w / 2, badge_y + 8, id(font_subtitle), c_fg, TextAlign::TOP_CENTER,
+          it.printf(badge_x + badge_w / 2, badge_y + 10, id(font_body), c_fg, TextAlign::TOP_CENTER,
                     "%s%.2f%%", is_pos ? "+" : "", items[i].change);
         }
 
-        // Footer Section
-        it.printf(margin_x, 435, id(font_subtitle), c_fg, "CoinMarketCap API  •  Seeed reTerminal E1001");
+        // Footer Section (Font >= 18px)
+        it.printf(margin_x, 438, id(font_body), c_fg, "CoinMarketCap API  |  Seeed reTerminal E1001");
         int bat_pct = id(batt_percent).has_state() ? (int)id(batt_percent).state : 85;
-        it.printf(800 - margin_x, 435, id(font_subtitle), c_fg, TextAlign::TOP_RIGHT, "Battery: %d%%", bat_pct);
+        it.printf(800 - margin_x, 438, id(font_body), c_fg, TextAlign::TOP_RIGHT, "Battery: %d%%", bat_pct);
       }
 
       // ============================================================================
-      // MODULE 3: NATIVE GENERATIVE ART
+      // MODULE 3: NATIVE GENERATIVE ART (Full-bleed, clean, zero header text)
       // ============================================================================
       else if (mod == 3) {
         int cx = 400;
@@ -1012,8 +1040,4 @@ display:
             }
           }
         }
-
-        // Generative Art Watermark
-        it.printf(20, 20, id(font_subtitle), c_fg, "Generative Art  •  Style %d  •  Seed %d", style + 1, s);
-        it.printf(780, 20, id(font_small), c_fg, TextAlign::TOP_RIGHT, "Seeed reTerminal E1001");
       }
