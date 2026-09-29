@@ -456,8 +456,8 @@ function drawBatteryIndicator(rightEdgeX, centerY, levelPercent, palette) {
 let lucideIcons = {};
 
 function preload() {
-  fontRobotoRegular = loadFont("../common/fonts/Roboto-Regular.ttf");
-  fontRobotoBold = loadFont("../common/fonts/Roboto-Bold.ttf");
+  fontRobotoRegular = loadFont("../../common/fonts/Roboto-Regular.ttf");
+  fontRobotoBold = loadFont("../../common/fonts/Roboto-Bold.ttf");
   lucideIcons.sun = loadImage("assets/icons/sun.svg");
   lucideIcons.cloudSun = loadImage("assets/icons/cloud-sun.svg");
   lucideIcons.cloud = loadImage("assets/icons/cloud.svg");

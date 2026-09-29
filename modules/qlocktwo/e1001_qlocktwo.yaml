@@ -1,0 +1,411 @@
+# ============================================================================
+# Seeed reTerminal E1001 QLOCKTWO - ESPHome Configuration
+# Version: 2026.09.28.16.58.00
+# Description: Standalone typographic QLOCKTWO clock for Seeed E1001 (800x480).
+#              - Synchronized screen updates strictly once a minute at :00s
+#              - Hardware button refreshes immediately, continuing top-of-minute cadence
+#              - NXP PCF8563 I2C Real-Time Clock integration (SDA: 19, SCL: 20)
+#              - Network SNTP sync with auto-write to hardware RTC (no mid-minute flashes)
+#              - Unlit letters rendered in 25% dithered gray at full 28px size
+#              - Lit letters rendered in solid high-contrast black/white
+#              - Unlit corner minute dots are not rendered (hidden)
+#              - Perfectly centered grid with no footer
+#              - Hardware battery gauge (GPIO1 ADC + GPIO21 enable)
+#              - Physical buttons:
+#                - GPIO4: Cycle Language (English, German, French, Spanish, Italian, Dutch)
+#                - GPIO5: Toggle Theme (Paper Light vs Charcoal Dark)
+#                - GPIO3: Manual Refresh Button
+# ============================================================================
+
+substitutions:
+  name: "seeed-reterminal-e1001-qlocktwo"
+  friendly_name: "Seeed E1001 QLOCKTWO"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  on_boot:
+    priority: 800
+    then:
+      - output.turn_on: sd_cs_pin
+      - output.turn_off: sd_en_pin
+      - output.turn_on: batt_en_pin
+      - delay: 300ms
+      - pcf8563.read_time:
+      - delay: 300ms
+      - component.update: batt_voltage
+      - delay: 200ms
+      - component.update: eink_display
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+# Top-level dynamic state globals
+globals:
+  - id: active_lang_idx
+    type: int
+    restore_value: true
+    initial_value: '0' # 0: English, 1: German, 2: French, 3: Spanish, 4: Italian, 5: Dutch
+  - id: dark_mode
+    type: bool
+    restore_value: true
+    initial_value: 'false'
+
+# Enable logging over USB-UART (/dev/cu.usbserial-110)
+logger:
+  hardware_uart: UART0
+  baud_rate: 115200
+
+# Wi-Fi configuration with fallback AP
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "E1001-QlockTwo-Fallback"
+
+captive_portal:
+
+# I2C Bus for NXP PCF8563 RTC (SDA: GPIO19, SCL: GPIO20)
+i2c:
+  sda: GPIO19
+  scl: GPIO20
+  scan: true
+  id: bus_a
+
+# Power / Bus Controls
+output:
+  - platform: gpio
+    pin: GPIO14
+    id: sd_cs_pin
+  - platform: gpio
+    pin: GPIO16
+    id: sd_en_pin
+  - platform: gpio
+    pin: GPIO21
+    id: batt_en_pin
+
+# Battery Voltage Sensor
+sensor:
+  - platform: adc
+    pin: GPIO1
+    id: batt_voltage
+    attenuation: 12db
+    update_interval: 60s
+    filters:
+      - multiply: 2.0
+  - platform: template
+    name: "Battery Percentage"
+    id: batt_percent
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    update_interval: 60s
+    lambda: |-
+      if (!id(batt_voltage).has_state()) return 85.0f;
+      float v = id(batt_voltage).state;
+      if (v >= 4.15f) return 100.0f;
+      if (v <= 3.30f) return 0.0f;
+      return (v - 3.30f) / (4.15f - 3.30f) * 100.0f;
+
+# Real-Time Clock & Network SNTP Time Synchronization
+time:
+  - platform: pcf8563
+    id: pcf_rtc
+    i2c_id: bus_a
+    address: 0x51
+
+  - platform: sntp
+    id: sntp_time
+    timezone: "Asia/Bangkok"
+    on_time_sync:
+      then:
+        # Sync time to RTC silently without triggering mid-minute display redraw
+        - pcf8563.write_time:
+    on_time:
+      # Top of the minute trigger (:00s)
+      - seconds: 0
+        minutes: /1
+        then:
+          - component.update: eink_display
+
+# Physical Buttons
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO4
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Language Button"
+    on_press:
+      then:
+        - lambda: |-
+            id(active_lang_idx) = (id(active_lang_idx) + 1) % 6;
+        - component.update: eink_display
+
+  - platform: gpio
+    pin:
+      number: GPIO5
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Theme Button"
+    on_press:
+      then:
+        - lambda: |-
+            id(dark_mode) = !id(dark_mode);
+        - component.update: eink_display
+
+  - platform: gpio
+    pin:
+      number: GPIO3
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Refresh Button"
+    on_press:
+      then:
+        - component.update: eink_display
+
+# Typography & Fonts
+font:
+  - file: "../common/fonts/Roboto-Bold.ttf"
+    id: font_matrix
+    size: 28
+    glyphs: "0123456789° %/:-.,|'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜÉÈÇÀ"
+
+# Hardware SPI
+spi:
+  clk_pin: GPIO7
+  mosi_pin: GPIO9
+
+# 800x480 Waveshare E-Paper Display
+display:
+  - platform: waveshare_epaper
+    id: eink_display
+    cs_pin: GPIO10
+    dc_pin: GPIO11
+    reset_pin: GPIO12
+    busy_pin:
+      number: GPIO13
+      inverted: true
+    model: 7.50inv2
+    update_interval: never
+    rotation: 0
+    lambda: |-
+      // ============================================================================
+      // QLOCKTWO LANGUAGE DEFINITIONS & BITMASKS
+      // ============================================================================
+      struct QLang {
+        const char* name;
+        int offset;
+        const char* clock;
+        const uint32_t hr[12][4];
+        const uint32_t mi[12][4];
+      };
+
+      static const QLang LANGS[6] = {
+        // 0: English
+        {
+          "ENGLISH", 25,
+          "ITLISASTIMEACQUARTERDCTWENTYFIVEXHALFBTENFTOPASTERUNINEONESIXTHREEFOURFIVETWOEIGHTELEVENSEVENTWELVETENSEoCLOCK",
+          {
+            {0x1b, 0, 7, 0}, {0x1b, 0, 0x380000, 0}, {0x1b, 0, 0x7c0, 0}, {0x1b, 0, 0x7800, 0},
+            {0x1b, 0, 0x78000, 0}, {0x1b, 0, 0x38, 0}, {0x1b, 0, 0, 0x3e0}, {0x1b, 0, 0x7c00000, 0},
+            {0x1b, 0x7800000, 0, 0}, {0x1b, 0, 0, 0x70000}, {0x1b, 0, 0x8000000, 0x1f}, {0x1b, 0, 0, 0xfc00}
+          },
+          {
+            {0, 0, 0, 0x7e00000}, {0, 0xf000f, 0, 0}, {0, 0xf1c00, 0, 0}, {0xfe800, 0xf0000, 0, 0},
+            {0xfc00000, 0xf0000, 0, 0}, {0xfc00000, 0xf000f, 0, 0}, {0, 0xf01e0, 0, 0}, {0xfc00000, 0xc00f, 0, 0},
+            {0xfc00000, 0xc000, 0, 0}, {0xfe800, 0xc000, 0, 0}, {0, 0xdc00, 0, 0}, {0, 0xc00f, 0, 0}
+          }
+        },
+        // 1: German
+        {
+          "DEUTSCH", 35,
+          "ESKISTAFÜNFZEHNZWANZIGDREIVIERTELVORFUNKNACHHALBAELFÜNFEINSXÄMZWEIDREIAUJVIERSECHSNLACHTSIEBENZWÖLFZEHNEUNKUHR",
+          {
+            {0x3b, 0, 7, 0}, {0x3b, 0, 0x780, 0}, {0x3b, 0, 0x7800, 0}, {0x3b, 0, 0x3c0000, 0},
+            {0x3b, 0x7800000, 0, 0}, {0x3b, 0, 0x7c00000, 0}, {0x3b, 0, 0, 0x7e0}, {0x3b, 0, 0, 0x1e},
+            {0x3b, 0, 0, 0x780000}, {0x3b, 0, 0, 0xf0000}, {0x3b, 0xe00000, 0, 0}, {0x3b, 0, 0, 0xf800}
+          },
+          {
+            {0, 0, 0, 0x7000000}, {0x780, 0xf000, 0, 0}, {0x7800, 0xf000, 0, 0}, {0xc000000, 0xf01f, 0, 0},
+            {0x3f8000, 0xf000, 0, 0}, {0x780, 0xf00e0, 0, 0}, {0, 0xf0000, 0, 0}, {0x780, 0xff000, 0, 0},
+            {0x3f8000, 0xe0, 0, 0}, {0xc000000, 0xff, 0, 0}, {0x7800, 0xe0, 0, 0}, {0x780, 0xe0, 0, 0}
+          }
+        },
+        // 2: French
+        {
+          "FRANÇAIS", 25,
+          "ILNESTOUNERDEUXNUTROISQUATREDOUZECINQSIXSEPTHUITNEUFDIXONZERHEURESMOINSOLEDIXETRQUARTREDVINGT-CINQUETSDEMIEPAN",
+          {
+            {0x3bb, 0, 0x3e0, 0}, {0x783b, 0, 0x7e0, 0}, {0x3e003b, 0, 0x7e0, 0}, {0xfc0003b, 0, 0x7e0, 0},
+            {0x3b, 0x1e0, 0x7e0, 0}, {0x3b, 0xe00, 0x7e0, 0}, {0x3b, 0xf000, 0x7e0, 0}, {0x3b, 0xf0000, 0x7e0, 0},
+            {0x3b, 0xf00000, 0x7e0, 0}, {0x3b, 0x7000000, 0x7e0, 0}, {0x3b, 0, 0x7ef, 0}, {0x3b, 0x1f, 0x7e0, 0}
+          },
+          {
+            {0, 0, 0, 0}, {0, 0, 0, 0x7800}, {0, 0, 0x380000, 0}, {0, 0, 0xec00000, 3},
+            {0, 0, 0, 0x3e0}, {0, 0, 0, 0x7fe0}, {0, 0, 0, 0xfb0000}, {0, 0, 0xf800, 0x7fe0},
+            {0, 0, 0xf800, 0x3e0}, {0, 0, 0xe06f800, 3}, {0, 0, 0x38f800, 0}, {0, 0, 0xf800, 0x7800}
+          }
+        },
+        // 3: Spanish
+        {
+          "ESPAÑOL", 25,
+          "ESONELASUNADOSITRESORECUATROCINCOSEISASIETENOCHONUEVEYOLADIEZSONCEDOCELYMENOSOVEINTEDIEZVEINTICINCOMEDIACUARTO",
+          {
+            {0x763, 0, 0, 0}, {0x38ee, 0, 0, 0}, {0x780ee, 0, 0, 0}, {0xfc000ee, 0, 0, 0},
+            {0xee, 0x1f, 0, 0}, {0xee, 0x1e0, 0, 0}, {0xee, 0x7c00, 0, 0}, {0xee, 0xf0000, 0, 0},
+            {0xee, 0x1f00000, 0, 0}, {0xee, 0, 0x3c, 0}, {0xee, 0, 0x780, 0}, {0xee, 0, 0x7800, 0}
+          },
+          {
+            {0, 0, 0, 0}, {0, 0, 0x10000, 0xf800}, {0, 0, 0x10000, 0x1e}, {0, 0, 0x10000, 0x7e00000},
+            {0, 0, 0xf810000, 1}, {0, 0, 0x10000, 0xffe0}, {0, 0, 0x10000, 0x1f0000}, {0, 0, 0x3e0000, 0xffe0},
+            {0, 0, 0xfbe0000, 1}, {0, 0, 0x3e0000, 0x7e00000}, {0, 0, 0x3e0000, 0x1e}, {0, 0, 0x3e0000, 0xf800}
+          }
+        },
+        // 4: Italian
+        {
+          "ITALIANO", 25,
+          "SONORLEBOREÉRĽUNASDUEZTREOTTONOVEDIECIUNDICIDODICISETTEQUATTROCSEICINQUESMENOECUNOQUARTOVENTICINQUEDIECIEMEZZA",
+          {
+            {0x1e800, 0, 0, 0}, {0x1c006f, 0, 0, 0}, {0x1c0006f, 0, 0, 0}, {0x6f, 0, 0x7f, 0},
+            {0x6f, 0, 0x1f800, 0}, {0x6f, 0, 0x700, 0}, {0x6f, 0x7c00000, 0, 0}, {0xe00006f, 1, 0, 0},
+            {0x6f, 0x1e, 0, 0}, {0x6f, 0x3e0, 0, 0}, {0x6f, 0xfc00, 0, 0}, {0x6f, 0x3f0000, 0, 0}
+          },
+          {
+            {0, 0, 0, 0}, {0, 0, 0x400000, 0xfc00}, {0, 0, 0x400000, 0x1f0000}, {0, 0, 0xb400000, 0x1f},
+            {0, 0, 0x400000, 0x3e0}, {0, 0, 0x400000, 0xffe0}, {0, 0, 0x400000, 0x7c00000}, {0, 0, 0x3c0000, 0xffe0},
+            {0, 0, 0x3c0000, 0x3e0}, {0, 0, 0xb3c0000, 0x1f}, {0, 0, 0x3c0000, 0x1f0000}, {0, 0, 0x3c0000, 0xfc00}
+          }
+        },
+        // 5: Dutch
+        {
+          "NEDERLANDS", 40,
+          "HETKISAVIJFTIENBTZVOOROVERMEKWARTHALFSPWOVERVOORTHGÉÉNSTWEEPVCDRIEVIERVIJFZESZEVENONEGENACHTTIENELFTWAALFBFUUR",
+          {
+            {0x37, 0x3800000, 0, 0}, {0x37, 0, 0xf, 0}, {0x37, 0, 0x780, 0}, {0x37, 0, 0x7800, 0},
+            {0x37, 0, 0x78000, 0}, {0x37, 0, 0x380000, 0}, {0x37, 0, 0x7c00000, 0}, {0x37, 0, 0, 0x1e0},
+            {0x37, 0, 0, 0x1f}, {0x37, 0, 0, 0x1e00}, {0x37, 0, 0, 0xe000}, {0x37, 0, 0, 0x3f0000}
+          },
+          {
+            {0, 0, 0, 0x7000000}, {0x3c00780, 0, 0, 0}, {0x3c07800, 0, 0, 0}, {0, 0xf01f, 0, 0},
+            {0x3c7800, 0x1e0, 0, 0}, {0x3c0780, 0x1e0, 0, 0}, {0, 0x1e0, 0, 0}, {0x3c00780, 0x1e0, 0, 0},
+            {0x3c07800, 0x1e0, 0, 0}, {0, 0xf001f, 0, 0}, {0x3c7800, 0, 0, 0}, {0x3c0780, 0, 0, 0}
+          }
+        }
+      };
+
+      // Get current time: prioritize SNTP if valid, otherwise fallback to PCF8563 RTC
+      auto time_now = id(sntp_time).now();
+      if (!time_now.is_valid()) {
+        time_now = id(pcf_rtc).now();
+      }
+
+      int hour = time_now.hour;
+      int minute = time_now.minute;
+
+      if (hour == 0) hour = 12;
+
+      int l_idx = id(active_lang_idx);
+      if (l_idx < 0 || l_idx >= 6) l_idx = 0;
+      const QLang& lang = LANGS[l_idx];
+
+      int five_min_idx = minute / 5;
+      if ((five_min_idx * 5 + lang.offset) >= 60) {
+        hour += 1;
+      }
+      if (hour > 12) hour -= 12;
+      if (hour == 0) hour = 12;
+
+      // Merge hour and minute bitmasks
+      uint32_t merged[4];
+      for (int i = 0; i < 4; i++) {
+        merged[i] = lang.hr[hour - 1][i] | lang.mi[five_min_idx][i];
+      }
+
+      // Populate lit boolean flags (1..110)
+      bool is_lit[111] = {false};
+      int offsets[4] = {1, 29, 56, 84};
+      for (int i = 0; i < 4; i++) {
+        uint32_t cset = merged[i];
+        int crange = 28 - (i % 2);
+        int coff = offsets[i];
+        for (int j = 0; j < crange; j++) {
+          if ((cset & 1) == 1) {
+            int cid = j + coff;
+            if (cid <= 110) is_lit[cid] = true;
+          }
+          cset >>= 1;
+        }
+      }
+
+      // Corner Minutes (+1..+4)
+      int rem_min = minute % 5;
+      int cmask = (1 << rem_min) - 1;
+      bool dot_tl = (cmask & 1) != 0;
+      bool dot_tr = (cmask & 2) != 0;
+      bool dot_br = (cmask & 4) != 0;
+      bool dot_bl = (cmask & 8) != 0;
+
+      // Color Theme Selection
+      Color bg_color = id(dark_mode) ? COLOR_ON : COLOR_OFF;
+      Color fg_lit = id(dark_mode) ? COLOR_OFF : COLOR_ON;
+
+      // Fill screen background
+      it.fill(bg_color);
+
+      // Centered Matrix Geometry (800x480 screen, no footer)
+      int grid_w = 520;
+      int grid_h = 420;
+      int start_x = (800 - grid_w) / 2;
+      int start_y = (480 - grid_h) / 2;
+      int cell_w = grid_w / 11;
+      int cell_h = grid_h / 10;
+
+      // Draw Corner Minute Dots ONLY when illuminated (no unlit dots)
+      int dot_m = 24;
+      int dot_r = 6;
+      if (dot_tl) it.filled_circle(dot_m, dot_m, dot_r, fg_lit);
+      if (dot_tr) it.filled_circle(800 - dot_m, dot_m, dot_r, fg_lit);
+      if (dot_br) it.filled_circle(800 - dot_m, 480 - dot_m, dot_r, fg_lit);
+      if (dot_bl) it.filled_circle(dot_m, 480 - dot_m, dot_r, fg_lit);
+
+      // Render Matrix Grid (Lit in solid 100%, Unlit in 25% dithered gray at full 28px font size)
+      int char_idx = 0;
+      for (int r = 0; r < 10; r++) {
+        for (int c = 0; c < 11; c++) {
+          int cell_id = (r * 11) + c + 1;
+          char ch = lang.clock[char_idx++];
+          int cx = start_x + (c * cell_w) + (cell_w / 2);
+          int cy = start_y + (r * cell_h) + (cell_h / 2);
+
+          if (is_lit[cell_id]) {
+            // Lit letters: Solid black / solid white (100% density)
+            if (ch == 'o') {
+              it.printf(cx, cy, id(font_matrix), fg_lit, TextAlign::CENTER, "O'");
+            } else {
+              it.printf(cx, cy, id(font_matrix), fg_lit, TextAlign::CENTER, "%c", ch);
+            }
+          } else {
+            // Unlit letters: Same 28px font, dithered to 25% dot-grid (1 out of 4 pixels kept)
+            if (ch == 'o') {
+              it.printf(cx, cy, id(font_matrix), fg_lit, TextAlign::CENTER, "O'");
+            } else {
+              it.printf(cx, cy, id(font_matrix), fg_lit, TextAlign::CENTER, "%c", ch);
+            }
+
+            // Apply 25% dither mask: only keep pixels where px%2==0 and py%2==0
+            int bx0 = cx - (cell_w / 2);
+            int bx1 = cx + (cell_w / 2);
+            int by0 = cy - (cell_h / 2);
+            int by1 = cy + (cell_h / 2);
+            for (int py = by0; py <= by1; py++) {
+              for (int px = bx0; px <= bx1; px++) {
+                if ((px % 2 != 0) || (py % 2 != 0)) {
+                  it.draw_pixel_at(px, py, bg_color);
+                }
+              }
+            }
+          }
+        }
+      }

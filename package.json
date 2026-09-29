@@ -3,10 +3,21 @@
   "version": "1.0.0",
   "description": "Parent workspace and shared assets for Seeed reTerminal E1001 p5.js projects",
   "scripts": {
-    "art1": "npx serve -l 8001 art1-test",
+    "start": "node server.js",
+    "hub": "node server.js",
     "serve": "npx serve -l 8001 .",
-    "flash:art1": ".venv/bin/esphome run firmware/e1001_art1.yaml --device /dev/cu.usbserial-110",
-    "flash:clock": ".venv/bin/esphome run firmware/e1001_analog_clock.yaml --device /dev/cu.usbserial-110"
+    "weather": "npx serve -l 8002 modules/weather",
+    "crypto": "node modules/crypto/server.js",
+    "tasks": "node modules/tasks/server.js",
+    "qlocktwo": "node modules/qlocktwo/server.js",
+    "art1": "npx serve -l 8001 modules/art1-test",
+    "flash:hub": ".venv/bin/esphome run firmware/e1001_hub_client.yaml --device /dev/cu.usbserial-210",
+    "flash:art1": ".venv/bin/esphome run firmware/e1001_art1.yaml --device /dev/cu.usbserial-210",
+    "flash:weather": ".venv/bin/esphome run firmware/e1001_weather.yaml --device /dev/cu.usbserial-210",
+    "flash:crypto": ".venv/bin/esphome run firmware/e1001_crypto.yaml --device /dev/cu.usbserial-210",
+    "flash:qlocktwo": ".venv/bin/esphome run firmware/e1001_qlocktwo.yaml --device /dev/cu.usbserial-210",
+    "flash:tasks": ".venv/bin/esphome run firmware/e1001_tasks.yaml --device /dev/cu.usbserial-210",
+    "flash:unified": ".venv/bin/esphome run firmware/e1001_unified_hub.yaml --device /dev/cu.usbserial-210"
   },
   "keywords": [
     "e1001",
@@ -14,5 +25,9 @@
     "e-ink",
     "seeed"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@napi-rs/canvas": "^1.0.9",
+    "express": "^5.2.1"
+  }
 }

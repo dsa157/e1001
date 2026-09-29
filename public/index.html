@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seeed reTerminal E1001 &bull; Master Dashboard Hub</title>
+  <!-- Google Fonts: Roboto -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/public/style.css">
+</head>
+<body>
+  <div class="hub-container">
+    <!-- Header -->
+    <header class="hub-header">
+      <div class="header-brand">
+        <div class="status-dot pulse"></div>
+        <h1 class="brand-title">Seeed reTerminal E1001 &bull; Master Hub</h1>
+        <span class="badge badge-resolution">800 &times; 480 E-Paper</span>
+      </div>
+      <div class="header-stats">
+        <span id="cycle-status-badge" class="badge badge-active">Cycling Active</span>
+        <span id="active-module-badge" class="badge">Module: Weather</span>
+        <span class="version-tag">v2026.09.29.14.50.00</span>
+      </div>
+    </header>
+
+    <!-- Main Live Screen Frame -->
+    <main class="viewport-area">
+      <div class="eink-hardware-bezel">
+        <div class="eink-screen-wrapper">
+          <img id="live-screen-img" src="/api/screen.png" alt="E-Ink Frame Render" width="800" height="480">
+          <div id="screen-loading" class="screen-spinner hidden"></div>
+        </div>
+      </div>
+      
+      <!-- Cycle Progress Bar -->
+      <div class="progress-bar-container">
+        <div id="cycle-progress-fill" class="progress-fill" style="width: 100%;"></div>
+      </div>
+      <div class="cycle-info-row">
+        <span id="cycle-countdown-label">Next screen in: <strong>30s</strong></span>
+        <span class="stream-hint">Device Stream: <code>http://&lt;ip&gt;:8000/api/screen.png</code></span>
+      </div>
+    </main>
+
+    <!-- Module Selector Pills -->
+    <section class="module-pills-container" id="module-pills-list">
+      <!-- Dynamic Module Pills Injected Here -->
+    </section>
+
+    <!-- Control Bar -->
+    <footer class="hub-controls">
+      <div class="controls-left">
+        <button id="btn-prev" class="btn btn-secondary" title="Switch to Previous Module (GPIO5)">
+          ◀ Prev <kbd>GPIO5</kbd>
+        </button>
+        <button id="btn-pause" class="btn btn-secondary" title="Pause / Resume Cycle Timer (GPIO3)">
+          ⏸ Pause Cycle <kbd>GPIO3</kbd>
+        </button>
+        <button id="btn-next" class="btn btn-secondary" title="Switch to Next Module (GPIO4)">
+          Next ▶ <kbd>GPIO4</kbd>
+        </button>
+      </div>
+
+      <div class="controls-right">
+        <button id="btn-refresh" class="btn btn-secondary" title="Refresh Current Frame [R]">
+          🔄 Refresh Frame
+        </button>
+        <a id="btn-download" href="/api/screen.png" download="e1001_frame.png" class="btn btn-primary">
+          ⬇ Export PNG
+        </a>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/public/app.js"></script>
+</body>
+</html>

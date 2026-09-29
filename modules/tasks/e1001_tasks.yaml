@@ -1,0 +1,97 @@
+# ============================================================================
+# Seeed reTerminal E1001 Google Tasks Dashboard - ESPHome Configuration
+# Version: 2026.09.27.11.30.00
+# Description: High-contrast e-paper task manager for Seeed E1001 (800x480).
+#              - Connects to local Node proxy (/api/tasks) or Google Tasks API
+#              - Strictly Roboto Bold typography for all text elements
+#              - Completion radial gauge and active task cards
+#              - Hardware battery ADC (GPIO1 via GPIO21 enable pin)
+#              - Physical buttons (GPIO4: Toggle Filter, GPIO5: Invert Theme, GPIO3: Sync)
+# ============================================================================
+
+substitutions:
+  name: "seeed-reterminal-e1001-tasks"
+  friendly_name: "Seeed E1001 Tasks Dashboard"
+  tasks_server_host: "192.168.1.100" # IP of machine running node tasks server
+  tasks_server_port: "8004"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  on_boot:
+    priority: 800
+    then:
+      - output.turn_on: sd_cs_pin
+      - output.turn_off: sd_en_pin
+      - output.turn_on: batt_en_pin
+      - delay: 500ms
+      - component.update: batt_voltage
+      - delay: 200ms
+      - component.update: eink_display
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+# Hardware Pins & Display Driver
+spi:
+  clk_pin: GPIO7
+  mosi_pin: GPIO9
+
+output:
+  - platform: gpio
+    pin: GPIO21
+    id: batt_en_pin
+  - platform: gpio
+    pin: GPIO47
+    id: sd_en_pin
+  - platform: gpio
+    pin: GPIO48
+    id: sd_cs_pin
+
+sensor:
+  - platform: adc
+    pin: GPIO1
+    id: batt_voltage
+    name: "Battery Voltage"
+    update_interval: 60s
+    attenuation: 12db
+    filters:
+      - multiply: 2.0
+
+# Physical Buttons
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO3
+      inverted: true
+      mode: INPUT_PULLUP
+    name: "Action Button (Sync)"
+    on_press:
+      then:
+        - component.update: eink_display
+
+  - platform: gpio
+    pin:
+      number: GPIO4
+      inverted: true
+      mode: INPUT_PULLUP
+    name: "Next Button (Filter)"
+
+  - platform: gpio
+    pin:
+      number: GPIO5
+      inverted: true
+      mode: INPUT_PULLUP
+    name: "Prev Button (Invert)"
+
+display:
+  - platform: waveshare_epaper
+    id: eink_display
+    cs_pin: GPIO10
+    dc_pin: GPIO11
+    busy_pin: GPIO13
+    reset_pin: GPIO12
+    model: 7.50in-hd
+    update_interval: 300s

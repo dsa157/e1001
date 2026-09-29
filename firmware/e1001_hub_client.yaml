@@ -1,0 +1,136 @@
+# ============================================================================
+# Seeed reTerminal E1001 - Master Hub Client (Option A: Image Stream)
+# Version: 2026.09.29.16.05.00
+# Description: Connects to Wi-Fi, streams 800x480 e-ink frames from the Node.js
+#              Master Hub server (/api/screen.png), and routes hardware buttons
+#              (GPIO3, GPIO4, GPIO5) to the server's API endpoints.
+# ============================================================================
+
+substitutions:
+  name: "seeed-e1001-hub-client"
+  friendly_name: "Seeed E1001 Hub Client"
+  # Current local LAN IP
+  hub_host: "192.168.1.93"
+  hub_port: "8000"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  on_boot:
+    priority: 800
+    then:
+      - output.turn_on: sd_cs_pin
+      - output.turn_off: sd_en_pin
+      - output.turn_on: batt_en_pin
+      - delay: 1000ms
+      - component.update: eink_display
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "E1001-Hub-Fallback"
+    password: "fallbackpassword"
+
+captive_portal:
+
+logger:
+  hardware_uart: UART0
+  baud_rate: 115200
+
+http_request:
+  useragent: "Seeed-reTerminal-E1001/1.0"
+  timeout: 10s
+  verify_ssl: false
+
+output:
+  - platform: gpio
+    pin: GPIO14
+    id: sd_cs_pin
+  - platform: gpio
+    pin: GPIO16
+    id: sd_en_pin
+  - platform: gpio
+    pin: GPIO21
+    id: batt_en_pin
+
+# Hardware Physical Buttons
+binary_sensor:
+  # Next Button (GPIO4) -> Switch to Next Module (or Single Module Next)
+  - platform: gpio
+    pin:
+      number: GPIO4
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Next Button"
+    on_press:
+      then:
+        - http_request.get:
+            url: "http://${hub_host}:${hub_port}/api/next"
+        - delay: 300ms
+        - component.update: eink_display
+
+  # Prev Button (GPIO5) -> Switch to Previous Module (or Single Module Prev)
+  - platform: gpio
+    pin:
+      number: GPIO5
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Prev Button"
+    on_press:
+      then:
+        - http_request.get:
+            url: "http://${hub_host}:${hub_port}/api/prev"
+        - delay: 300ms
+        - component.update: eink_display
+
+  # Action Button (GPIO3) -> Toggle Cycle Pause/Play (or Single Module Refresh)
+  - platform: gpio
+    pin:
+      number: GPIO3
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Action Button"
+    on_press:
+      then:
+        - http_request.get:
+            url: "http://${hub_host}:${hub_port}/api/action"
+        - delay: 300ms
+        - component.update: eink_display
+
+# SPI Bus for UC8179 E-Paper Display
+spi:
+  clk_pin: GPIO7
+  mosi_pin: GPIO9
+
+# Online Image Component fetching from Master Hub Node Server
+online_image:
+  - id: hub_screen_image
+    url: "http://${hub_host}:${hub_port}/api/screen.png"
+    type: BINARY
+    format: png
+    buffer_size: 65536
+    update_interval: 15s
+    on_download_finished:
+      then:
+        - component.update: eink_display
+
+display:
+  - platform: waveshare_epaper
+    id: eink_display
+    cs_pin: GPIO10
+    dc_pin: GPIO11
+    reset_pin: GPIO12
+    busy_pin:
+      number: GPIO13
+      inverted: true
+    model: 7.50inv2
+    update_interval: never
+    rotation: 0
+    lambda: |-
+      it.image(0, 0, id(hub_screen_image));

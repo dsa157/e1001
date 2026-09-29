@@ -220,7 +220,7 @@ const server = http.createServer(async (req, res) => {
   // Static File Serving (supporting root and /common paths)
   let filePath;
   if (pathname.startsWith("/common/")) {
-    filePath = path.join(__dirname, "..", pathname);
+    filePath = path.join(__dirname, "../..", pathname);
   } else {
     filePath = path.join(__dirname, pathname === "/" ? "index.html" : pathname);
   }

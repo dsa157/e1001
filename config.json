@@ -1,0 +1,66 @@
+{
+  "name": "Seeed reTerminal E1001 Master Dashboard Hub",
+  "version": "2026.09.29.14.42.00",
+  "description": "Master module registry and display cycle scheduler for Seeed reTerminal E1001 (800x480 e-paper)",
+  "settings": {
+    "server_port": 8000,
+    "display_width": 800,
+    "display_height": 480,
+    "cycle_enabled": true,
+    "default_dwell_seconds": 30,
+    "active_palette_index": 0,
+    "global_seed": 1001
+  },
+  "modules": [
+    {
+      "id": "weather",
+      "name": "Weather Dashboard",
+      "description": "Live weather forecast, 5-day outlook, and current conditions via Open-Meteo",
+      "path": "modules/weather",
+      "entry": "modules/weather/index.html",
+      "port": 8001,
+      "enabled": true,
+      "dwell_seconds": 30
+    },
+    {
+      "id": "crypto",
+      "name": "Crypto Asset Dashboard",
+      "description": "Real-time cryptocurrency price tracker with 24h delta and sparklines via CoinMarketCap",
+      "path": "modules/crypto",
+      "entry": "modules/crypto/index.html",
+      "port": 8002,
+      "enabled": true,
+      "dwell_seconds": 20
+    },
+    {
+      "id": "qlocktwo",
+      "name": "Qlocktwo Word Clock",
+      "description": "Typographic German/multilingual word clock with direct 1-bit image rendering endpoint",
+      "path": "modules/qlocktwo",
+      "entry": "modules/qlocktwo/index.html",
+      "port": 8003,
+      "enabled": true,
+      "dwell_seconds": 60
+    },
+    {
+      "id": "tasks",
+      "name": "Google Tasks Dashboard",
+      "description": "Active task list with priority status and due dates via Google Tasks API",
+      "path": "modules/tasks",
+      "entry": "modules/tasks/index.html",
+      "port": 8004,
+      "enabled": false,
+      "dwell_seconds": 30
+    },
+    {
+      "id": "art1-test",
+      "name": "Generative Art",
+      "description": "Aspect-fitted generative art sketches with Perlin flow fields and harmonics",
+      "path": "modules/art1-test",
+      "entry": "modules/art1-test/index.html",
+      "port": 8005,
+      "enabled": true,
+      "dwell_seconds": 20
+    }
+  ]
+}

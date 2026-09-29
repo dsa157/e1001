@@ -9,8 +9,14 @@ Parent repository and shared infrastructure for **Seeed Studio reTerminal E1001*
   - `e1001-common.js`: Core engine, 800&times;480 hardware parameters, 5 curated monochromatic palettes, deterministic seed management, 1-bit Floyd-Steinberg dithering.
   - `e1001-style.css`: Unified e-paper bezel container, glassmorphism toolbar, and responsive typography.
 - `firmware/`: Shared ESPHome templates and drivers for flashing to the E1001 device (GPIO3, GPIO4, GPIO5 buttons, SPI bus configuration, UC8179 controller).
-- `art1-test/`: Generative art project with 3 aspect-fitted borderless designs.
-- `weather/`: E-Ink Weather Dashboard with Open-Meteo API integration.
+- `modules/`: Plug-and-play screen modules:
+  - `weather/`: E-Ink Weather Dashboard with Open-Meteo API integration.
+  - `crypto/`: Cryptocurrency asset tracker with CoinMarketCap integration.
+  - `qlocktwo/`: Multilingual typographic word clock with direct 1-bit rendering endpoint.
+  - `tasks/`: Google Tasks productivity dashboard.
+  - `art1-test/`: Generative art project with 3 aspect-fitted borderless designs.
+- `config.json`: Master registry and cycle duration scheduler for all modules.
+- `.env.example`: Master environment variables and API keys configuration.
 
 ---
 
@@ -27,4 +33,4 @@ To serve all projects from the parent workspace on port **8001**:
 ```bash
 npm run serve
 ```
-Access subprojects at `http://localhost:8001/<project-name>/` (e.g., [http://localhost:8001/art1-test/](http://localhost:8001/art1-test/)).
+Access submodules at `http://localhost:8001/modules/<module-name>/` (e.g., [http://localhost:8001/modules/weather/](http://localhost:8001/modules/weather/)).
